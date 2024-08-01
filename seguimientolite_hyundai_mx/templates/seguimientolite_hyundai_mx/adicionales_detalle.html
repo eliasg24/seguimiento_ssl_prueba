@@ -1,0 +1,306 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %} {% block content %} {% load static %} {% load mathfilters %}
+<div class="container-fluid mx-auto">
+  <!--TARJETA DE INFORMACION-->
+  <div class="card shadow mt-4 mx-auto">
+    <h5 class="card-header">
+      <a href="../" type="button" class="btn btn-primary shadow my-auto mr-3">
+        <i class="fas fa-chevron-left fa-lg"></i>
+        Atrás
+      </a>
+      Informacion de la Orden
+    </h5>
+    <div class="card-body">
+      <h5>Orden de Servicio: {{orden.no_orden}}</h5>
+      <h6>Placa: {{orden.placas}}</h6>
+      <h6>VIN: {{orden.vin}}</h6>
+      <h6>Cliente: {{orden.cliente}}</h6>
+      <h6>Vehiculo: {{orden.vehiculo}}</h6>
+      <h6>Asesor: {{orden.asesor|lower|title}}</h6>
+      {% for tecnico in tecnicos %} {% if tecnico.id_empleado == orden.tecnico %}
+      <h6>Tecnico: {{tecnico.nombre_empleado|lower|title}}</h6>
+      {% endif %} {% endfor %}
+      <h6>Fecha de Elaboración Tecnica: {{fin_tecnico}}</h6>
+      <button class="btn btn-primary my-3 shadow galeria_evidencias">
+        <i class="fas fa-photo-video fa-lg"></i>
+        Registro fotográfico
+      </button>
+    </div>
+  </div>
+
+  <div class="row justify-content-md-center my-4">
+    <div class="col-5 text-center">
+      <select class="form-control d-inline shadow id_item_adicional" style="width: 65%" id="exampleFormControlSelect1">
+        <option>Elige un item adicional y presiona "añadir"</option>
+        {% for adicional in items_adicionales %}
+        <option value="{{adicional.id_item}}">{{ adicional.nombre }}  |  Repuestos: ${{ adicional.costo_repuestos }}    Mano de obra: ${{ adicional.costo_mo }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn btn-primary d-inline shadow añadir-adicional">
+        <i class="fas fa-plus fa-lg"></i>
+        Añadir
+      </button>
+    </div>
+  </div>
+
+  <!--ADICIONALES-->
+  <div class="card mx-auto my-4 shadow">
+    <h5 class="card-header">
+      <div class="row">
+        <div class="col">
+          Items adicionales
+        </div>
+        <div class="col-3 text-right">
+          <button type="button" class="btn btn-success guardar-inspeccion">
+            <i class="far fa-save fa-lg"></i>
+            Guardar
+          </button>
+        </div>
+      </div>
+    </h5>
+    <div class="card-body container contenedor-adicionales">
+      {% if items_adicionales_ri %}
+      <div class="alert alert-warning shadow" role="alert">
+        Todos los precios deben incluir IVA. El porcentaje de descuento se indica con numeros enteros.
+      </div>
+      {% endif %}
+      {% for adicional in items_adicionales_ri %}
+      {% if adicional.nombre in lista_items_ri %}
+      <div data-id_item="{{adicional.id_item}}" data-tipo="ri" class="py-3 px-3 my-5 text-center border bg-light item-adicional-ri shadow">
+        <div class="text-right mb-3">
+          <button type="button" class="btn btn-primary shadow">
+            <i class="fas fa-concierge-bell fa-lg"></i>
+            Recepcion Interactiva
+          </button>
+        </div>
+        <div class="row">
+          <div class="col text-center">
+            <h5 class="ri-item">{{adicional.nombre}}</h5>
+            {% if adicional.descripcion %}
+            <p>{{adicional.descripcion}}</p>
+            {% endif %}
+          </div>
+          
+          <div class="col text-center">
+            <h6>Repuestos: <input class="form-control monto-repuestos" type="number" 
+              {% for guardado in items_guardados %}
+              {% if guardado.id_item.slugify == adicional.id_item.slugify and guardado.item == adicional.nombre %}
+              value="{{guardado.monto_refaccion}}"
+              {% endif %}
+              {% endfor %}
+            ></h6>
+            <h6>Mano de obra: <input class="form-control monto-mo" type="number" 
+              {% for guardado in items_guardados %}
+              {% if guardado.id_item.slugify == adicional.id_item.slugify and guardado.item == adicional.nombre %}
+              value="{{guardado.monto_mo}}"
+              {% endif %}
+              {% endfor %}
+            ></h6>
+          </div>
+      
+          <div class="col text-center">
+            <h6>Porcentaje de descuento: <input class="form-control monto-descuento" type="number" 
+              {% for guardado in items_guardados %}
+              {% if guardado.id_item.slugify == adicional.id_item.slugify and guardado.item == adicional.nombre %}
+              value="{{guardado.porcentaje_descuento}}"
+              {% endif %}
+              {% endfor %}
+            ></h6>
+            <h6>Total: <input class="form-control monto-total" type="number" 
+              {% for guardado in items_guardados %}
+              {% if guardado.id_item.slugify == adicional.id_item.slugify and guardado.item == adicional.nombre %}
+              value="{{guardado.total_iva}}"
+              {% endif %}
+              {% endfor %}
+            readonly></h6>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+      {% for adicional in items_adicionales %}
+      {% if adicional.id_item|slugify in ids_guardados %}
+      <div data-id_item="{{adicional.id_item}}" class="py-3 px-3 my-5 text-center border bg-light item-adicional shadow">
+        <div class="text-right">
+          <button type="button" class="btn btn-danger retirar shadow">
+            <i class="far fa-trash-alt fa-lg"></i>
+            Retirar
+          </button>
+        </div>
+        <div class="row">
+          <div class="col text-center">
+            <h5>{{adicional.nombre}}</h5>
+            {% if adicional.descripcion %}
+            <p>{{adicional.descripcion}}</p>
+            {% endif %}
+          </div>
+
+          <div class="col text-center">
+            <h6>Repuestos: <strong>${{adicional.costo_repuestos}}</strong></h6>
+            <h6>Mano de obra: <strong>${{adicional.costo_mo}}</strong></h6>
+          </div>
+        
+          <div class="col text-center">
+            <h6>Descuento: <strong>${{adicional.descuento}}</strong></h6>
+            <h6>Total: <strong>${{adicional.costo_repuestos|addition:adicional.costo_mo}}</strong></h6>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% for adicional in items_adicionales %}
+<div id="adicional-{{adicional.id_item}}" data-id_item="{{adicional.id_item}}" class="py-3 px-3 my-4 text-center border bg-light item-adicional shadow" style="display: none;">
+  <div class="text-right">
+    <button type="button" class="btn btn-danger retirar shadow">
+      <i class="far fa-trash-alt fa-lg"></i>
+      Retirar
+    </button>
+  </div>
+  <div class="row">
+    <div class="col text-center">
+      <h5>{{adicional.nombre}}</h5>
+      {% if adicional.descripcion %}
+      <p>{{adicional.descripcion}}</p>
+      {% endif %}
+    </div>
+
+    <div class="col text-center">
+      <h6>Repuestos: <strong>${{adicional.costo_repuestos}}</strong></h6>
+      <h6>Mano de obra: <strong>${{adicional.costo_mo}}</strong></h6>
+    </div>
+
+    <div class="col text-center">
+      <h6>Descuento: <strong>${{adicional.descuento}}</strong></h6>
+      <h6>Total: <strong>${{adicional.costo_repuestos|addition:adicional.costo_mo}}</strong></h6>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!--AÑADIR Y RETIRAR ITEMS-->
+<script>
+  $(".añadir-adicional").on("click", function () {
+    let id_item_adicional = $(".id_item_adicional").val();
+    let item = $("#adicional-"+ id_item_adicional).clone(true);
+    $(".contenedor-adicionales").append($(item).fadeIn());
+  })
+
+  $(".retirar").on("click", function () {
+    if (confirm("¿Esta seguro de que desea retirar este item adicional?")) {
+      $(this).closest(".item-adicional").remove();
+    }
+  })
+</script>
+
+<!--GUARDAR INSPECCION-->
+<script>
+  $(".guardar-inspeccion").click(function () {
+    if (confirm("¿Desea guardar la inspeccion de adicionales?")) {
+      let data = {};
+      data.guardar_inpeccion = true;
+      data.ids_item = [];
+      $(".contenedor-adicionales").find(".item-adicional").each(function (index, item) {
+        data.ids_item.push( $(item).data("id_item") );
+      })
+        .promise()
+        .done(
+          function () {
+            console.log(data)
+            $.ajax({
+              type: "post", // "post" "get" "delete" "put"
+              data: data, // PREFERIBLEMENTE JSON
+              cache: false,
+              success: function () {
+                $(".contenedor-adicionales").find(".item-adicional-ri").each(function (index, item) {
+                  let data_ri = {};
+                  data_ri.ri = true;
+                  data_ri.item = $(item).find(".ri-item").text();
+                  data_ri.costo_repuestos = $(item).find(".monto-repuestos").val();
+                  data_ri.costo_mo = $(item).find(".monto-mo").val();
+                  data_ri.porcentaje_descuento = $(item).find(".monto-descuento").val();
+                  data_ri.total = $(item).find(".monto-total").val();
+                  data_ri.id_item = $(item).data("id_item");
+
+                  if (!data_ri.costo_repuestos) {
+                    data_ri.costo_repuestos = 0;
+                  }
+                  if (!data_ri.costo_mo) {
+                    data_ri.costo_mo = 0;
+                  }
+                  if (!data_ri.porcentaje_descuento) {
+                    data_ri.porcentaje_descuento = 0;
+                  }
+
+                  $.ajax({
+                    type: "post", // "post" "get" "delete" "put"
+                    data: data_ri, // PREFERIBLEMENTE JSON
+                    cache: false,
+                    headers: {
+                      "X-CSRFToken": Cookies.get('csrftoken')
+                    }
+                  })
+                }).promise()
+                  .done(function () {
+                    alert("Adicionales guardados")
+                    location.reload();
+                  });
+              },
+              headers: {
+                "X-CSRFToken": Cookies.get('csrftoken')
+              }
+            });
+          }
+        )
+    }
+  });
+</script>
+
+<!--TOTALES ADICIONALES RI-->
+<script>
+  $(".monto-repuestos, .monto-mo, .monto-descuento").keyup(function () {
+    let item_adicional = $(this).parents(".item-adicional-ri").first();
+    
+    let monto_repuestos = parseFloat($(item_adicional).find(".monto-repuestos").val());
+    let monto_mo = parseFloat($(item_adicional).find(".monto-mo").val());
+    let porcentaje_descuento = parseFloat($(item_adicional).find(".monto-descuento").val());
+
+    if (!monto_repuestos) {
+      monto_repuestos = 0;
+    }
+    if (!monto_mo) {
+      monto_mo = 0;
+    }
+    if (!porcentaje_descuento) {
+      porcentaje_descuento = 0;
+    }
+    
+    let total = (monto_repuestos + monto_mo) - ((monto_repuestos + monto_mo) * (porcentaje_descuento / 100));
+
+    $(item_adicional).find(".monto-total").val(total.toFixed(2));
+  })
+</script>
+
+<!--TOTALES-->
+<script>
+  $(function () {
+    var resumen_total = 0;
+    var resumen_total_iva = 0;
+    var resumen_total_iva_descuento = 0;
+
+    $(".refaccion").each(function () {
+      let refaccion = this;
+
+      resumen_total = resumen_total + parseFloat($(refaccion).find(".refaccion-total").first().text());
+      resumen_total_iva = resumen_total_iva + parseFloat($(refaccion).find(".refaccion-total_iva").first().text());
+      resumen_total_iva_descuento = resumen_total_iva_descuento + parseFloat($(refaccion).find(".refaccion-total_iva_descuento").first().text());
+    });
+
+    $(".resumen-total").text(resumen_total.toFixed(2));
+    $(".resumen-total_iva").text(resumen_total_iva.toFixed(2));
+    $(".resumen-total_iva_descuento").text(resumen_total_iva_descuento.toFixed(2));
+  });
+</script>
+{% endblock %}

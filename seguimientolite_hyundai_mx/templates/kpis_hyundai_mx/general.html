@@ -1,0 +1,230 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+
+{% load static %}
+{% load mathfilters %}
+
+<script type="application/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script type="application/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+
+<div class="container-fluid my-4">
+  <div class="row mb-3">
+    <div class="col">
+      <h6>Buscar VIN / orden</h6>
+      <label> </label>
+      <div class="input-group shadow">
+        <div class="input-group-prepend">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
+        <input type="text" onkeyup="buscador()" placeholder="" id="buscadorAsesor" class="form-control"
+          aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+      </div>
+    </div>
+    <div class="col">
+      <h6>Filtrar por fecha:</h6>
+      <div class="row">
+        <div class="col">
+          <label>Inicio:</label>
+          <input id="startdate" class="form-control datepicker"></input>
+        </div>
+        <div class="col">
+          <label>Fin:</label>
+          <input id="enddate" class="form-control datepicker"></input>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <h6>Filtrar por asesor:</h6>
+      {% for asesor in asesores %}
+      {% ifchanged %}
+      <div>
+        <input class="form-check-input" type="checkbox" value="{{asesor}}">
+        <label class="form-check-label">
+          {{asesor}}
+        </label>
+      </div>
+      {% endifchanged %}
+      {% endfor %}
+    </div>
+    <script>
+      $(".form-check-input").change(function () {
+        var classes = [];
+
+        $(".form-check-input").each(function () {
+          if ($(this).is(":checked")) { classes.push($(this).val()); }
+        });
+
+        if (classes == "") { // if no filters selected, show all items
+          $("#tablaOrdenes tbody tr").show();
+        } else { // otherwise, hide everything...
+          $("#tablaOrdenes tbody tr").hide();
+
+          $("#tablaOrdenes tr").each(function () {
+            var show = true;
+            var row = $(this);
+            classes.forEach(function (className) {
+              if (row.find('.asesor').text() !== className) { show = false; }
+
+              if (row.find('.asesor').text() == className) { row.show(); }
+            });
+            if (show) { row.show(); }
+          });
+        }
+      });
+    </script>
+    <div class="col text-right">
+      <a class="btn btn-primary text-light shadow excel mt-auto" role="button">
+        <i class="far fa-file-excel"></i>
+        Descargar Excel
+      </a>
+    </div>
+    <script>
+      $(".excel").click(function () {
+        try {
+          var fecha_inicio = $('#startdate').val();
+          fecha_inicio = fecha_inicio.replace(/\//g, "-");
+          if (!fecha_inicio) {
+            var fecha_inicio = "null";
+          }
+        } catch (error) {
+          var fecha_inicio = "null";
+        }
+
+        try {
+          var fecha_fin = $('#enddate').val();
+          fecha_fin = fecha_fin.replace(/\//g, "-");
+
+          if (!fecha_fin) {
+            var fecha_fin = "null";
+          }
+        } catch (error) {
+          var fecha_fin = "null";
+        }
+
+        try {
+          var lista_asesores = [];
+          $('.form-check-input').each(function () {
+            if ($(this).is(":checked")) {
+              lista_asesores.push($(this).val());
+            }
+          });
+          var asesores = lista_asesores.join();
+          if (!asesores) {
+            asesores = "null"; z
+          }
+        } catch (error) {
+          var asesores = "null";
+        }
+
+        console.log(asesores)
+
+        window.location.href = `/seguimiento/kpis/general_pdf/${fecha_inicio}/${fecha_fin}/${asesores}/`;
+      })
+    </script>
+  </div>
+
+  <div class="card my-4 shadow">
+    <div class="card-header">
+      <h6>Listado de Ordenes</h6>
+    </div>
+    <table id="tablaOrdenes" class="table table-sm">
+      <thead class="thead-dark">
+        <tr>
+          <th>Orden</th>
+          <th>Placas</th>
+          <th>Cliente</th>
+          <th>Teléfono</th>
+          <th>Asesor</th>
+          <th>Fecha de llegada</th>
+          <th>VIN</th>
+          <th>Modelo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for orden in ordenes %}
+        <tr>
+          <td>
+            <a role="button" href="{{ orden.no_orden }}" class="btn btn-link">{{ orden.no_orden }}</a>
+          </td>
+          <td>{{ orden.no_placas }}</td>
+          <td>{{ orden.cliente }}</td>
+          <td>{{ orden.telefono }}</td>
+          <td class="asesor">{{ orden.asesor }}</td>
+          <td>{{ orden.fecha_hora_entrada|date:"d/m/Y" }}</td>
+          <td>{{ orden.vin }}</td>
+          <td>{{ orden.modelo }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function buscador() {
+    var input, filter, table, tr, td, i, txtValue, td1, txtValue2;
+    input = document.getElementById("buscadorAsesor");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("tablaOrdenes");
+    tr = table.getElementsByTagName("tr");
+    for (i = 0; i < tr.length; i++) {
+      td0 = tr[i].getElementsByTagName("td")[0];
+      td1 = tr[i].getElementsByTagName("td")[1];
+      td2 = tr[i].getElementsByTagName("td")[2];
+      if (td0 || td1 || td2) {
+        txtValue0 = td0.textContent || td0.innerText;
+        txtValue1 = td1.textContent || td1.innerText;
+        txtValue2 = td2.textContent || td2.innerText;
+        if (txtValue0.toUpperCase().indexOf(filter) > -1 || txtValue2.toUpperCase().indexOf(filter) > -1 || txtValue0.toUpperCase().indexOf(filter) > -1) {
+          tr[i].style.display = "";
+        } else {
+          tr[i].style.display = "none";
+        }
+      }
+    }
+  }
+</script>
+
+<!--DATATABLES-->
+<script>
+  $(document).ready(function () {
+    $.fn.dataTable.ext.search.push(
+      function (settings, data, dataIndex) {
+        var min = $('#startdate').datepicker("getDate");
+        var max = $('#enddate').datepicker("getDate");
+        // need to change str order before making  date obect since it uses a new Date("mm/dd/yyyy") format for short date.
+        var d = data[3].split("/");
+        var startDate = new Date(d[1] + "/" + d[0] + "/" + d[2]);
+
+        if (min == null && max == null) { return true; }
+        if (min == null && startDate <= max) { return true; }
+        if (max == null && startDate >= min) { return true; }
+        if (startDate <= max && startDate >= min) { return true; }
+        return false;
+      }
+    );
+
+
+    $("#startdate").datepicker({ onSelect: function () { table.draw(); }, changeMonth: true, changeYear: true, dateFormat: "dd/mm/yy" });
+    $("#enddate").datepicker({ onSelect: function () { table.draw(); }, changeMonth: true, changeYear: true, dateFormat: "dd/mm/yy" });
+    var table = $('#tablaOrdenes').DataTable({
+      "paging": false,
+      "order": [[0, "desc"]],
+      "responsive": true,
+      "searching": true,
+      "lengthChange": false,
+      "info": false,
+      "language": {
+        "search": "Buscar:",
+      }
+    });
+
+    // Event listener to the two range filtering inputs to redraw on input
+    $('#startdate, #enddate').change(function () {
+      table.draw();
+    });
+  });
+</script>
+
+{% endblock %}

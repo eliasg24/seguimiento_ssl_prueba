@@ -1,0 +1,103 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+{% load static %}
+<div class="container mx-auto">
+  <div class="row mb-3">
+    <div class="col-md-5">
+      <div class="input-group mb-3 shadow">
+        <div class="input-group-prepend">
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
+        </div>
+        <input type="text" onkeyup="buscador()" placeholder="Buscar por Orden o por VIN" id="buscadorAsesor"
+          class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+      </div>
+    </div>
+    {% comment %}
+    <div class="col-md-3">
+      <div class="input-group mb-2">
+        <span class="switch switch-sm mt-2">
+          <input type="checkbox" class="switch" id="switch-sm">
+          <label for="switch-sm">
+            <h6>Solo Vehiculos En Taller</h6>
+          </label>
+        </span>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="input-group mb-2">
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="inputGroup-sizing-default">Seleccionar Por Fecha</span>
+        </div>
+        <input id="date" class="form-control" type="date">
+      </div>
+    </div>
+    {% endcomment %}
+  </div>
+  <div class="card mb-3 mx-auto shadow">
+    <h5 class="card-header">
+      Listado de Ordenes
+    </h5>
+    <table id="tablaOrdenes" class="mt-0 table table-sm table-sm table-hover mx-auto">
+      <thead class="bg-dark text-center">
+        <tr>
+          <th scope="col">Orden</th>
+          <th scope="col">VIN</th>
+          <th scope="col">Placas</th>
+          <th scope="col">Vehículo</th>
+          <th scope="col" class="desktop">Asesor</th>
+          <th scope="col" class="desktop">Tecnico</th>
+          <th scope="col" class="desktop">Fecha Ingreso</th>
+          <th scope="col" class="desktop">Fecha Elaboración Tecnica</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in filas %}
+        <tr>
+          <td><a role="button" href="/calidad/{{fila.no_orden}}" class="btn btn-link">{{fila.no_orden}}</button></td>
+          <td>{{fila.vin}}</td>
+          <td>{{fila.placas}}</td>
+          <td>{{fila.vehiculo}}</td>
+          <td>{{fila.asesor}}</td>
+          <td>{{fila.tecnico}}</td>
+          <td>{{fila.fecha_ingreso}}</td>
+          <td>{{fila.fin_tecnico}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+
+  <script>
+    function buscador() {
+      var input, filter, table, tr, td, i, txtValue, td1, txtValue2;
+      input = document.getElementById("buscadorAsesor");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("tablaOrdenes");
+      tr = table.getElementsByTagName("tr");
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[1];
+        td1 = tr[i].getElementsByTagName("td")[2];
+        if (td || td1) {
+          txtValue = td.textContent || td.innerText;
+          txtValue2 = td1.textContent || td1.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1 || txtValue2.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
+      }
+    }
+    $('#tablaOrdenes').DataTable({
+      "paging": false,
+      "order": [[0, "desc"]],
+      "responsive": true,
+      "searching": false,
+      "lengthChange": false,
+      "info": false,
+    });
+  </script>
+  {% endblock %}

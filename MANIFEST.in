@@ -1,0 +1,3 @@
+recursive-include seguimientolite_hyundai_mx/static *
+recursive-include seguimientolite_hyundai_mx/templates *
+recursive-include seguimientolite_hyundai_mx/pdf *

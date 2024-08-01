@@ -1,0 +1,93 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+<div class="container-fluid mx-auto">
+  <div class="row mb-3">
+    <div class="col-md-5">
+      <div class="input-group mb-3 shadow">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Buscar:</span>
+        </div>
+        <input type="text" onkeyup="buscador()" placeholder="Buscar por Orden o por VIN" id="buscadorAsesor"
+          class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3 shadow">
+    <h5 class="card-header">
+      Listado de Ordenes
+    </h5>
+    <table id="tablaOrdenes" class="mt-0 table table-sm table-hover mx-auto">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col" class="all">Placas</th>
+          <th scope="col" class="all">Orden</th>
+          <th scope="col" class="desktop">Asesor</th>
+          <th scope="col" class="desktop">Tecnico</th>
+          <th scope="col" class="desktop">Fecha Elaboracion Tecnica</th>
+          <th scope="col" class="desktop">Revision Repuestos</th>
+          <th scope="col" class="desktop">Estado</th>
+          <th scope="col" class="desktop">Visitas</th>
+          <th scope="col" class="all">Respuesta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in filas %}
+        <tr>
+          <td><a role="button" href="{% url 'detalle_ordenes' fila.no_orden %}" class="btn btn-link">{{fila.placas}}</a>
+          </td>
+          <td>{{fila.no_orden}}</td>
+          <td>{{fila.asesor}}</td>
+          <td>{{fila.tecnico}}</td>
+          <td>{{fila.fecha_ingreso}}</td>
+          <td>{{fila.fecha_hora_fin_refacciones}}</td>
+          <td>
+            <div class="text-center">
+              <span class="badge badge-pill badge-warning text-white">Recomendados: {{fila.recomendados}}</span>
+            </div>
+            <div class="text-center">
+              <span class="badge badge-pill badge-danger">Inmediatos: {{fila.inmediatos}}</span>
+            </div>
+          </td>
+          <td>{{fila.visitas}}</td>
+          <td>Autorizados: {{fila.respuesta}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+
+<script>
+  function buscador() {
+    var input, filter, table, tr, td, i, txtValue, td1, txtValue2;
+    input = document.getElementById("buscadorAsesor");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("tablaOrdenes");
+    tr = table.getElementsByTagName("tr");
+    for (i = 0; i < tr.length; i++) {
+      td = tr[i].getElementsByTagName("td")[0];
+      td1 = tr[i].getElementsByTagName("td")[1];
+      if (td || td1) {
+        txtValue = td.textContent || td.innerText;
+        txtValue2 = td1.textContent || td1.innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1 || txtValue2.toUpperCase().indexOf(filter) > -1) {
+          tr[i].style.display = "";
+        } else {
+          tr[i].style.display = "none";
+        }
+      }
+    }
+  }
+  $('#tablaOrdenes').DataTable({
+    "paging": false,
+    "order": [[0, "desc"]],
+    "responsive": true,
+    "searching": false,
+    "lengthChange": false,
+    "info": false,
+  });
+</script>
+{% endblock %}

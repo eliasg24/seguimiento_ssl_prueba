@@ -1,0 +1,29 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %} {% block tecnico-head %} {% endblock %} {% block content %}
+{% load static %}
+<style>
+  body {
+    background-color: #3c4247;
+  }
+
+</style>
+<div class="container">
+  <div class="row my-4">
+    <div class="col-md-4 col-sm-10 mt-3 mx-auto">
+      <div class="card bg-white mb-3 shadow-lg">
+        <div class="card-body">
+          <img src="{{ settings.LOGO }}" class="mx-auto d-block my-4" style="max-height: 70px" />
+          <form method="post">
+            {% csrf_token %} {% load crispy_forms_tags %} {{ form|crispy }}
+            <div class="text-center">
+              <button class="btn btn-primary shadow align-center" type="submit">
+                <i class="fas fa-sign-in-alt"></i>
+                Iniciar sesion
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

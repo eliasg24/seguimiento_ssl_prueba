@@ -1,0 +1,518 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+
+{% load static %}
+{% load svg_functions %}
+
+{% block tecnico-head %}
+{% endblock %}
+
+<!-- Navbar -->
+{% block navbar %}
+<nav class="navbar navbar-light bg-light sticky-top">
+  <span class="navbar-brand mb-0 h1">Técnico</span>
+</nav>
+{% endblock%}
+
+{% block content %}
+<div class="container mx-auto my-3">
+
+  <div class="card shadow">
+    <div class="card-header">
+      Información de la orden
+    </div>
+    <div class="card-body py-1 text-left">
+      <h6 class="my-1">Cliente: {{info.cliente}}</h6>
+      <h6 class="my-1">Vehículo: {{info.vehiculo}}</h6>
+      <h6 class="my-1">Placa: {{info.placas}}</h6>
+      <h6 class="my-1">Orden de Servicio: {{info.no_orden}}</h6>
+      {% if filas_media or filas_video %}
+      <div class="text-center">
+        <button class="btn btn-primary shadow galeria_evidencias">
+          <i class="fas fa-photo-video"></i>
+          Registro fotográfico
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="text-center my-3">
+    <div class="dropdown mx-auto text-center">
+      <button class="btn btn-primary btn-block py-3 dropdown-toggle" type="button" id="dropdownMenuButton"
+        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <a class="dropdown-item nav-link active" id="tab_revision_0" data-toggle="pill" href="#pane_revision_0"
+          role="tab" aria-controls="pane_revision_0" aria-selected="true">Seleccione una revisión</a>
+        {% for revision in revisiones %}
+        <a class="dropdown-item nav-link" id="tab_revision_{{revision.id}}" data-toggle="pill"
+          href="#pane_revision_{{revision.id}}" role="tab" aria-controls="pane_revision_{{revision.id}}"
+          aria-selected="true">{{revision.nombre}}</a>
+        {% endfor %}
+      </div>
+      <script>
+        $(".dropdown-item").click(function () {
+          $("#dropdownMenuButton").text($(this).text())
+          $(this).siblings().each(function (index, button) {
+            $(button).removeClass("active");
+          })
+        })
+      </script>
+    </div>
+  </div>
+
+  <div class="tab-content">
+    <div class="tab-pane my-3 fade revision-mazda show active" id="pane_revision_0" role="tabpanel"
+      aria-labelledby="tab_revision_0" data-spy="scroll" data-target="#navbar-example2">
+      <h5 class="text-center my-4">Seleccione una revisión</h5>
+    </div>
+    {% for revision in revisiones %}
+    <div class="tab-pane my-3 fade revision-mazda" id="pane_revision_{{revision.id}}" role="tabpanel"
+      aria-labelledby="tab_revision_{{revision.id}}" data-spy="scroll" data-target="#navbar-example2">
+      <div class="card shadow mx-auto">
+        <div class="card-body py-2">
+          {% for familia in familias_items %}
+          {% if familia.revision == revision %}
+          <div class="rounded py-3 px-2 bg-dark text-white">
+            <h6>{{familia}}</h6>
+          </div>
+          {% for item in lista_items %}
+          {% if item.familia == familia and item.familia.revision == revision %}
+          <div class="item my-4 py-3 rounded border shadow-sm">
+            <div class="row mx-auto mt-0 mb-0 pb-0">
+              <div class="col-md text-center mb-3">
+                <b class="item-nombre">{{item.descripcion}}</b>
+                <span class="item-id" style="display: none;">{{item.id}}</span>
+              </div>
+              <div class="col-md text-center mb-3">
+                <div id="status" class="btn-group btn-group btn-group-toggle" data-toggle="buttons">
+
+                  <label class="btn showcomment btn-outline-success" {% for guardado in items_guardados %}
+                    {% if guardado.item.id == item.id and guardado.estado == 'Buen Estado' %} active {% endif %}
+                    {% endfor %}>
+                    <input class="item-estado" type="radio" name="item-{{forloop.counter}}" autocomplete="off"
+                      value="Buen Estado" {% for guardado in items_guardados %}
+                      {% if guardado.item.id == item.id and guardado.estado == 'Buen Estado' %} checked {% endif %}
+                      {% endfor %} />
+                    <i class="fas fa-check"></i>
+                  </label>
+
+                  <label class="btn showcomment btn-outline-warning" {% for guardado in items_guardados %}
+                    {% if guardado.item.id == item.id and guardado.estado == 'Recomendado' %} active {% endif %}
+                    {% endfor %}>
+                    <input class="item-estado" type="radio" name="item-{{forloop.counter}}" autocomplete="off"
+                      value="Recomendado" {% for guardado in items_guardados %}
+                      {% if guardado.item.id == item.id and guardado.estado == 'Recomendado' %} checked {% endif %}
+                      {% endfor %} />
+                    <i class="fas fa-info-circle"></i>
+                  </label>
+
+                  <label class="btn showcomment btn-outline-danger" {% for guardado in items_guardados %}
+                    {% if guardado.item.id == item.id and guardado.estado == 'Inmediato' %} active {% endif %}
+                    {% endfor %}>
+                    <input class="item-estado" type="radio" name="item-{{forloop.counter}}" autocomplete="off"
+                      value="Inmediato" {% for guardado in items_guardados %}
+                      {% if guardado.item.id == item.id and guardado.estado == 'Inmediato' %} checked {% endif %}
+                      {% endfor %} />
+                    <i class="fas fa-exclamation-triangle"></i>
+                  </label>
+
+                  <label class="btn showcomment btn-outline-secondary" {% for guardado in items_guardados %}
+                    {% if guardado.item.id == item.id and guardado.estado == 'No Aplica' %} active {% endif %}
+                    {% endfor %}>
+                    <input class="item-estado" type="radio" name="item-{{forloop.counter}}" autocomplete="off"
+                      value="No Aplica" {% for guardado in items_guardados %}
+                      {% if guardado.item.id == item.id and guardado.estado == 'No Aplica' %} checked {% endif %}
+                      {% endfor %} />
+                    N/A
+                  </label>
+                </div>
+
+                {% if item.valor_x and item.valor_y %}
+                <div class="text-center mt-3">
+                  Valor registrado ({{item.unidad}})
+                  <input class="form-control item-valor" type="number" placeholder="Valor Registrado"
+                    {% for guardado in items_guardados %} {% if guardado.item.id == item.id %}
+                    value="{{guardado.valor}}" {% endif %} {% endfor %} />
+                </div>
+                {% endif %}
+              </div>
+              <div class="col-md mb-2">
+                <input type="file" class="fp-instance" style="display: none;" />
+              </div>
+            </div>
+            <div class="row mx-auto mt-0 mb-0 pb-0">
+              <div class="col-md">
+                <textarea placeholder="Comentarios" class="form-control item-comentario" rows="3"
+                  style="display: none;">{% for guardado in items_guardados %}{% if guardado.item.id == item.id %}{{guardado.comentarios.strip}}{% endif %}{% endfor %}</textarea>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Items Adicionales Tecnico -->
+      <div class="card shadow mx-auto my-4">
+        <h5 class="card-header">Items Adicionales</h5>
+        <div class="card-body">
+
+          <!-- Añadir items adicionales-->
+          <div class="item-adicional-nuevo-container">
+          </div>
+
+          <!-- Botón para añadir un nuevo item -->
+          <div class="text-center">
+            <button class="item-adicional-nuevo-boton" type="button" class="btn btn-primary shadow">
+              <i class="fas fa-plus"></i>
+              Añadir Item
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- OBSERVACIONES DE DAÑOS INFERIORES -->
+      <div class="card shadow mx-auto my-4">
+        <h5 class="card-header">Observaciones</h5>
+        <div class="card-body">
+          <textarea placeholder="" class="form-control daños-inferiores"
+            rows="4">{{comentario_inferior_guardado}}</textarea>
+        </div>
+      </div>
+
+      <!-- GUARDADO -->
+      <div class="text-center">
+        <button type="button" class="btn btn-success shadow guardar-inspeccion rounded my-4">
+          <i class="fas fa-save fa-lg"></i>
+          Guardar Inspeccion
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- FILEPOND INIT -->
+<script>
+  const inputElements = document.querySelectorAll("input.fp-instance");
+  Array.from(inputElements).forEach((inputElement) => {
+    FilePond.create(inputElement);
+  });
+  $(".fp-instance").hide();
+</script>
+
+<!-- UI COMPONENTS-->
+<script>
+  $(".showcomment").each(function (index) {
+    $(this).click(function () {
+      let current_item = this.closest(".item");
+      $(current_item).find(".item-comentario").fadeIn();
+      $(current_item).find(".fp-instance").fadeIn();
+    });
+  });
+
+  $(".hidecomment").each(function (index) {
+    $(this).click(function () {
+      let current_item = this.closest(".item");
+      $(current_item).find(".item-comentario").fadeOut();
+      $(current_item).find(".fp-instance").fadeOut();
+    });
+  });
+
+  function edit(td) {
+    td.getElementsByClassName("btn-primary")[0].style.display = "none";
+    td.getElementsByClassName("btn-success")[0].style.display = "block";
+    td.getElementsByClassName("btn-secondary")[0].style.display = "block";
+    td.getElementsByClassName("btn-danger")[0].style.display = "block";
+
+    td.closest("tr").getElementsByTagName("select")[0].disabled = false;
+  }
+
+  function cancel(td) {
+    td.getElementsByClassName("btn-primary")[0].style.display = "block";
+    td.getElementsByClassName("btn-success")[0].style.display = "none";
+    td.getElementsByClassName("btn-secondary")[0].style.display = "none";
+    td.getElementsByClassName("btn-danger")[0].style.display = "none";
+
+    td.closest("tr").getElementsByTagName("select")[0].disabled = true;
+  }
+
+  function save(tr) {
+    data = {};
+    data.item = tr.getElementsByTagName("td")[0].innerText;
+    data.estado = tr.getElementsByTagName("select")[0].value;
+    data.update = true;
+
+    $.ajax({
+      type: "post",
+      data: data,
+      cache: false,
+      headers: {
+        "X-CSRFToken": Cookies.get('csrftoken')
+      },
+      success: function () {
+        alert("Estado Actualizado");
+      }
+    });
+  }
+</script>
+
+<!-- GUARDADO DE INSPECCION -->
+<script>
+  $(".guardar-inspeccion").click(function () {
+    let items_totales = $(".revision-mazda.active").find(".item-estado").length;
+    let items_revisados = $(".revision-mazda.active").find(".item-estado").filter(":checked").length;
+
+    if (items_revisados == (items_totales / 4)) {
+      $(".revision-mazda.active").find(".item").each(function (index, element) {
+        let data = {};
+        let item = this;
+
+        if (index == 0) {
+          data.notif = true;
+        }
+
+
+        // OBTENCION DE DATOS DE ITEM
+        data.inspeccion = true;
+        data.id_item = $(item).find(".item-id").first().text();
+        data.estado = $(item).find(".item-estado:checked").first().val();
+        data.comentario = $(item).find(".item-comentario").first().val();
+
+        // REVISAR SI HAY VALORES QUE MEDIR
+        try {
+          data.valor = $(item).find(".item-valor").first().val()
+        } catch (error) {
+          data.valor = false
+        }
+
+        //Caso para item "bateria"
+        if ($(item).find(".bateria-estado-input").length) {
+          data.bateria_estado = Number($(item).find(".bateria-estado-input").val()) * 10;
+          data.bateria_nivel = Number($(item).find(".bateria-nivel-carga-input").val()) * 10;
+        }
+
+        // OBTENCION DE EVIDENCIA DEL ITEM Y CODIGOS DE FILEPOND
+        let files = $(item).find(".fp-instance").first().filepond("getFiles")
+        let lista_fp = new Array;
+        let lista_ev = new Array;
+        $(files).each(function () {
+          lista_fp.push(String(this.serverId));
+        });
+        $(files).each(function () {
+          lista_ev.push(String(this.filename));
+        });
+
+        data.fp_id = lista_fp
+        data.evidencias = lista_ev
+
+        console.log(data)
+        $.ajax({
+          type: "post", // "post" "get" "delete" "put"
+          data: data, // PREFERIBLEMENTE JSON
+          cache: false,
+          headers: {
+            "X-CSRFToken": Cookies.get('csrftoken')
+          }
+        });
+      })
+        .promise()
+        .done(function () {
+          data = {};
+          data.observaciones = true;
+          data.comentario_inferior = $(".daños-inferiores").first().val()
+          data.sintoma = $(".diagnostico-sintoma").first().val()
+          data.componente = $(".diagnostico-componente").first().val()
+          data.raiz = $(".diagnostico-causa-raiz").first().val()
+
+          $.ajax({
+            type: "post", // "post" "get" "delete" "put"
+            data: data, // PREFERIBLEMENTE JSON
+            cache: false,
+            headers: {
+              "X-CSRFToken": Cookies.get('csrftoken')
+            },
+            success: function () {
+              let data = {};
+              data.items_adicionales_nuevos = true;
+              let items = [];
+
+              $(".revision-mazda.active").find(".item-adicional-nuevo").each(function (index, element) {
+                let item = {};
+                item.nombre = $(element).find(".item-nombre").val();
+                item.estado = $(element).find(".item-estado:checked").val();
+                item.comentarios = $(element).find(".item-comentario").val();
+
+                let files = $(element).find(".fp-instance").first().filepond("getFiles")
+                let lista_fp = new Array;
+                let lista_ev = new Array;
+                $(files).each(function () {
+                  lista_fp.push(String(this.serverId));
+                });
+                $(files).each(function () {
+                  lista_ev.push(String(this.filename));
+                });
+
+                item.fp_id = lista_fp;
+                item.evidencias = lista_ev;
+
+                items.push(item);
+              })
+
+              data.items = JSON.stringify(items)
+
+              $.ajax({
+                type: "post",
+                data: data,
+                cache: false,
+                headers: {
+                  "X-CSRFToken": Cookies.get('csrftoken')
+                },
+                success: function () {
+                  console.log("Items adicionales guardados")
+                  alert("Inspeccion guardada")
+                  location.reload();
+                }
+              });
+            }
+          });
+        })
+    } else {
+      alert("Por favor, verifique el estado de cada item")
+    }
+  })
+</script>
+
+<!--LIGHT GALLERY-->
+<script>
+  $('.galeria_evidencias').on('click', function () {
+    $(this).lightGallery({
+      share: false,
+      dynamic: true,
+      dynamicEl: [
+        {% for ev in filas_media %}
+          {
+        "src": '{% get_media_prefix %}{{ev.evidencia}}',
+        'thumb': '{% get_media_prefix %}{{ev.evidencia}}',
+        'subHtml': '<h4>{{ev.item.item.descripcion}}</h4>'
+      },
+      {% endfor %}
+        {% for ev in filas_video %}
+  {
+    'html': '<video class="lg-video-object lg-html5" controls preload="none"><source src="{% get_media_prefix %}{{ev.evidencia}}"></video>',
+      'thumb': '{% get_media_prefix %}{{ev.evidencia}}',
+        'subHtml': '<h4>{{ev.item.item.descripcion}}</h4>'
+  }
+  {% endfor %}
+      ]
+    })
+  });
+</script>
+
+<script>
+  $(".bateria-estado-input").change(function () {
+    let val = Number($(this).val());
+    $(".bateria-estado-bubble").text(val * 10);
+  })
+  $(".bateria-nivel-carga-input").change(function () {
+    let val = Number($(this).val());
+    $(".bateria-nivel-carga-bubble").text(val * 10);
+  })
+
+  $(function () {
+    let val = Number($(".bateria-estado-input").val());
+    $(".bateria-estado-bubble").text(val * 10);
+  })
+  $(function () {
+    let val = Number($(".bateria-nivel-carga-input").val());
+    $(".bateria-nivel-carga-bubble").text(val * 10);
+  })
+</script>
+
+<!-- Logica Nuevos items -->
+<script>
+  var NUEVOS_ITEMS_COUNTER = 0;
+
+  $(".item-adicional-nuevo-boton").click(function () {
+    $(this).parents(".card").find(".item-adicional-nuevo-container").append(`
+    <div class="item-adicional-nuevo my-4 py-3 rounded border shadow-sm">
+      <div class="row mx-auto mt-0 mb-0 pb-0">
+        <div class="col-md text-center mb-3">
+          <input type="search" class="form-control item-nombre" list="items_adicionales_${NUEVOS_ITEMS_COUNTER}" placeholder="Nombre del Item" /></label>
+          <datalist id="items_adicionales_${NUEVOS_ITEMS_COUNTER}">
+            {% for item_adicional in items_adicionales %}
+            <option value="{{item_adicional.descripcion}}">{{item_adicional.descripcion}}</option>
+            {% endfor %}
+          </datalist>
+          <div class="text-center">
+            <button class="btn btn-danger btn-sm mt-2 item-adicional-nuevo-boton-borrar">Borrar</button>
+          </div>
+        </div>
+        <div class="col-md text-center mb-3">
+          <div id="status" class="btn-group btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn hidecomment btn-outline-success">
+              <input class="item-estado" type="radio" name="item_adicional_nuevo_${NUEVOS_ITEMS_COUNTER}" autocomplete="off" value="Buen Estado" />
+              <i class="fas fa-check"></i>
+            </label>
+            <label class="btn showcomment btn-outline-warning">
+              <input class="item-estado" type="radio" name="item_adicional_nuevo_${NUEVOS_ITEMS_COUNTER}" autocomplete="off" value="Recomendado" />
+              <i class="fas fa-info-circle"></i>
+            </label>
+            <label class="btn showcomment btn-outline-danger">
+              <input class="item-estado" type="radio" name="item_adicional_nuevo_${NUEVOS_ITEMS_COUNTER}" autocomplete="off" value="Inmediato" />
+              <i class="fas fa-exclamation-triangle"></i>
+            </label>
+            <label class="btn showcomment btn-outline-secondary">
+              <input class="item-estado" type="radio" name="item_adicional_nuevo_${NUEVOS_ITEMS_COUNTER}" autocomplete="off" value="No Aplica" />
+              N/A
+            </label>
+          </div>
+        </div>
+        <div class="col-md mb-2">
+          <input id="item_adicional_nuevo_fp_${NUEVOS_ITEMS_COUNTER}" type="file" class="fp-instance" style="display: none;" />
+        </div>
+      </div>
+      <div class="row mx-auto mt-0 mb-0 pb-0">
+        <div class="col-md">
+          <textarea placeholder="Comentarios" class="form-control item-comentario" rows="3" style="display: none;"></textarea>
+        </div>
+      </div>
+    </div>
+    `)
+
+    let filepond_item_adicional = document.getElementById(`item_adicional_nuevo_fp_${NUEVOS_ITEMS_COUNTER}`);
+    FilePond.create(filepond_item_adicional);
+
+    $(".showcomment").each(function (index) {
+      $(this).click(function () {
+        let current_item = this.closest(".item-adicional-nuevo");
+        $(current_item).find(".item-comentario").fadeIn();
+        $(current_item).find(".fp-instance").fadeIn();
+      });
+    });
+
+    $(".hidecomment").each(function (index) {
+      $(this).click(function () {
+        let current_item = this.closest(".item-adicional-nuevo");
+        $(current_item).find(".item-comentario").fadeOut();
+        $(current_item).find(".fp-instance").fadeOut();
+      });
+    });
+
+    NUEVOS_ITEMS_COUNTER += 1;
+  });
+
+  $(document).on("click", ".item-adicional-nuevo-boton-borrar", function () {
+    let item_adicional_nuevo = $(this).parents(".item-adicional-nuevo");
+    $(item_adicional_nuevo).fadeOut(300, $(item_adicional_nuevo).remove());
+  })
+</script>
+{% endblock %}
+
+{% block tecnico-foot %}
+{% endblock %}

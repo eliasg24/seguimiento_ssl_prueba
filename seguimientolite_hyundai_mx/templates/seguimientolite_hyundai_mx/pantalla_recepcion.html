@@ -1,0 +1,136 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+      crossorigin="anonymous"></script>
+
+    <script>
+      function mReloj() {
+        momentoActual = new Date();
+        try {
+          document.getElementById("time").value = momentoActual.format("dd/MM/yy hh:mm:ss tt");
+          console.log(momentoActual)
+        } catch (e) {
+          //pass
+        }
+        setTimeout("mReloj()", 1000)
+      }
+      mReloj();
+    </script>
+
+    <title>Pantalla de Recepción</title>
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-white bg-white">
+      <div class="container">
+        <a class="navbar-brand" href="#">
+          <img src="{% static 'seguimientolite_hyundai_mx/img/hyundai-logo-wide-blue.svg' %}" alt="" width="100%"
+            height="100%">
+        </a>
+        <h6>| Hyundai Hamke Pachuca</h6>
+      </div>
+    </nav>
+
+    <!-- Contenedor de corrusel -->
+    <div class="container-fluid">
+      <div class="carousel slide" data-bs-ride="carousel">
+
+        <div class="carousel-inner">
+          <div class="carousel-item active" data-bs-interval="10000">
+            <div class="col-sm-12">
+
+              <table class="table table-striped table-sm">
+                <thead>
+                  <tr>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Vehículo</th>
+                    <th scope="col">Placas</th>
+                    <th scope="col">Asesor</th>
+                    <th scope="col">Servicio</th>
+                    <th scope="col">Hora Cita</th>
+                    <th scope="col">Llegada</th>
+                    <th scope="col">Estatus</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in con_cita %}
+                  <tr>
+                    <td>{{row.cliente}}</td>
+                    <td>{{row.vehiculo}}</td>
+                    <td>{{row.placas}}</td>
+                    <td>{{row.asesor}}</td>
+                    <td>{{row.servicio_capturado}}</td>
+                    <td>{{row.hora_asesor}}</td>
+                    <td>{{row.hora_recepcion | default:"Pendiente"}}</td>
+                    <td>{{row.estatus_orden}}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="carousel-item" data-bs-interval="3500">
+            <img src="{% static 'seguimientolite_hyundai_mx/img/hyundai1.jpg' %}" class="d-block w-100" alt="...">
+          </div>
+
+          <div class="carousel-item" data-bs-interval="10000">
+            <div class="col-sm-12">
+
+              <table class="table table-striped table-sm">
+                <thead>
+                  <tr>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Vehículo</th>
+                    <th scope="col">Placas</th>
+                    <th scope="col">Asesor</th>
+                    <th scope="col">Servicio</th>
+                    <th scope="col">Llegada</th>
+                    <th scope="col">Estatus</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in sin_cita %}
+                  <tr>
+                    <td>{{row.cliente}}</td>
+                    <td>{{row.vehiculo}}</td>
+                    <td>{{row.placas}}</td>
+                    <td>{{row.asesor}}</td>
+                    <td>{{row.servicio_capturado}}</td>
+                    <td>{{row.hora_recepcion | default:"Pendiente"}}</td>
+                    <td>{{row.estatus_orden}}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="carousel-item" data-bs-interval="3500">
+            <img src="{% static 'seguimientolite_hyundai_mx/img/hyundai2.jpg' %}" class="d-block w-100" alt="...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recargar la pagina cada minuto -->
+    <script>
+      window.setTimeout(function () {
+        window.location.reload()
+      }, 60000)
+    </script>
+  </body>
+
+</html>

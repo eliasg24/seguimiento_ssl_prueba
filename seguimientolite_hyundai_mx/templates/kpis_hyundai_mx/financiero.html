@@ -1,0 +1,575 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+
+{% load static %}
+{% load mathfilters %}
+
+<style>
+  .card {
+    border-radius: 8px;
+  }
+
+  .highcharts-figure .chart-container {
+    width: 300px;
+    height: 200px;
+    float: left;
+  }
+
+  .highcharts-figure,
+  .highcharts-data-table table {
+    width: 600px;
+    margin: 0 auto;
+  }
+
+  .highcharts-data-table table {
+    font-family: Verdana, sans-serif;
+    border-collapse: collapse;
+    margin: 10px auto;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .highcharts-data-table caption {
+    padding: 1em 0;
+    font-size: 1.2em;
+  }
+
+  .highcharts-data-table th {
+    font-weight: 600;
+    padding: 0.5em;
+  }
+
+  .highcharts-data-table td,
+  .highcharts-data-table th,
+  .highcharts-data-table caption {
+    padding: 0.5em;
+  }
+
+  .highcharts-background {
+    height: 200px;
+  }
+
+  @media (max-width: 600px) {
+
+    .highcharts-figure,
+    .highcharts-data-table table {
+      width: 100%;
+    }
+
+    .highcharts-figure .chart-container {
+      width: 300px;
+      float: none;
+      margin: 0 auto;
+    }
+
+  }
+
+</style>
+
+<link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/css/bootstrap4-toggle.min.css"
+  rel="stylesheet">
+
+<div class="container-fluid mt-4 mb-4">
+
+  <div class="text-center">
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+      <label class="btn btn-info active">
+        <input type="radio" name="options" value="hoy" id="option1" checked> Hoy
+      </label>
+      <label class="btn btn-info">
+        <input type="radio" name="options" value="mes" id="option2"> Mes
+      </label>
+      <label class="btn btn-info">
+        <input type="radio" name="options" value="año" id="option3"> Año
+      </label>
+      <label class="btn btn-info">
+        <input type="radio" name="options" value="rango" id="option4"> Rango
+      </label>
+    </div>
+    <div class="row mt-3 mb-3 mx-auto">
+      <div class="col-md mx-auto form_mes mx-auto text-center hideable">
+        <input class="form-control d-inline-block" type="month" id="input_mes" min="2020-02" style="max-width: 50%;">
+        <button type="button" class="btn btn-info d-inline-block align-top" onclick="get_info('mes')">
+          <i class="fas fa-search"></i>
+          Buscar
+        </button>
+      </div>
+      <div class="col-md mx-auto form_año mx-auto hideable">
+        <select class="form-control d-inline-block" id="input_año" style="max-width: 50%;">
+          <option value=""></option>
+          {% for año in años %}
+          <option value="{{año.year}}">{{año.year}}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-info d-inline-block align-top" onclick="get_info('año')">
+          <i class="fas fa-search"></i>
+          Buscar
+        </button>
+      </div>
+      <div class="col-md mx-auto form_rango mx-auto hideable">
+        <input class="form-control d-inline-block" style="max-width: 35%;" type="date" id="input_rango_inicio"
+          min="2020-02">
+        <input class="form-control d-inline-block" style="max-width: 35%;" type="date" id="input_rango_fin"
+          min="2020-02">
+        <button type="button" class="btn btn-info d-inline-block align-top" onclick="get_info('rango')">
+          <i class="fas fa-search"></i>
+          Buscar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <h5 class=" header_dia hideable">Resumen del Dia</h5>
+  <h5 class="  header_mes hideable">Resumen por Mes</h5>
+  <h5 class="  header_año hideable">Resumen por Año</h5>
+  <h5 class="  header_rango hideable">Resumen por Rango</h5>
+
+  <div class="form-group">
+    <label for="filtro_asesor">Filtrar por asesor:</label>
+    <select class="form-control" id="filtro_asesor">
+      <option value="">Todos los asesores</option>
+      {% for asesor in asesores %}
+      <option value="{{asesor}}">{{asesor}}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card-deck">
+        <div class="card ">
+          <div class="card-body text-center ">
+            <div>
+              <button type="button" data-toggle="tooltip" data-placement="top" title="Numero de ordenes recibidas"
+                class="btn shadow" style="background-color: #3689e6;">
+                <i class="fas fa-lg	 fa-receipt"></i>
+              </button>
+            </div>
+            <h3 class="card-text no_ordenes_totales"></h3>
+            <b class="card-title ">Ordenes totales</b>
+          </div>
+        </div>
+        <div class="card ">
+          <div class="card-body text-center ">
+            <div>
+              <button type="button" data-toggle="tooltip" data-placement="top"
+                title="Numero de ordenes enviadas al cliente" class="btn shadow" style="background-color: #68b723;">
+                <i class="fas fa-lg	 fa-mail-bulk"></i>
+              </button>
+            </div>
+            <h3 class="no_ordenes_enviadas"></h3>
+            <b class="">Ordenes enviadas</b>
+          </div>
+        </div>
+        <div class="card ">
+          <div class="card-body text-center ">
+            <div>
+              <button type="button" data-toggle="tooltip" data-placement="top"
+                title="Numero de ordenes con autorizacion del cliente" class="btn shadow">
+                <i class="fas fa-lg	 fa-vote-yea"></i>
+              </button>
+            </div>
+            <h3 class="no_ordenes_autorizadas"></h3>
+            <b class="">Ordenes con autorización</b>
+          </div>
+        </div>
+        <div class="card ">
+          <div class="card-body text-center ">
+            <div>
+              <button type="button" data-toggle="tooltip" data-placement="top" title="Monto total autorizado"
+                class="btn shadow" style="background-color: #28bca3;">
+                <i class="fas fa-lg	 fa-dollar-sign"></i>
+              </button>
+            </div>
+            <h3 class="total_autorizado"></h3>
+            <b class="">Total autorizado</b>
+          </div>
+        </div>
+        <div class="card  text-center ">
+          <div class="card-body">
+            <div>
+              <button type="button" data-toggle="tooltip" data-placement="top"
+                title="Ítems autorizados promedio por orden" class="btn shadow" style="background-color: #485a6c;">
+                <i class="fas fa-lg	 fa-clipboard-list"></i>
+              </button>
+            </div>
+            <h3 class="items_promedio"></h3>
+            <b class="">Ítems autorizados promedio por orden</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid card-container px-4">
+
+</div>
+
+<div class="card tarjeta-asesor my-3" style="display: none;">
+  <div class="card-header">
+    <h5>Asesor: <strong class="asesor-nombre"></strong></h5>
+  </div>
+  <div class="card-body text-center">
+    <div class="row">
+      <div class="col text-left">
+        <h6 class="my-4"><strong class="asesor-ordenes"></strong> Ordenes atendidas</h6>
+        <h6 class="my-4"><strong class="asesor-ordenes-enviadas"></strong> Ordenes enviadas</h6>
+        <h6 class="my-4"><strong class="asesor-ordenes-autorizadas"></strong> Ordenes con autorización</h6>
+        <h6 class="my-4"><strong class="asesor-porcentaje-efectividad"></strong> Porcentaje de Efectividad</h6>
+      </div>
+      <div class="col text-left">
+        <h6 class="my-4"><strong class="asesor-monto-ssl"></strong> Monto generado en seguimiento en linea</h6>
+        <h5 class="my-4">Total: <strong class="asesor-monto-total"></strong></h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+<div class="container mt-4">
+  <div class="card ">
+    <div class="card-body">
+      <h5 class="card-title text-center" style="color:white">Ticket Promedio por Asesor</h5>
+      <figure class="highcharts-figure">
+        <div id="ticket"></div>
+      </figure>
+    </div>
+  </div>
+</div>
+{% endcomment %}
+
+
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+<!--
+      UI CONTROLLER
+    -->
+<script>
+  $(function () {
+    $('.hideable').hide()
+    $('.header_dia').fadeIn()
+    get_info('hoy');
+    $("input[type='radio']").click(function () {
+      $('.hideable').hide();
+      var radioValue = $("input[name='options']:checked").val();
+      if (radioValue == 'hoy') {
+        $('.header_dia').fadeIn()
+        get_info('hoy');
+      } else if (radioValue == 'mes') {
+        $('.header_mes').fadeIn()
+        $('.form_mes').fadeIn()
+      } else if (radioValue == 'año') {
+        $('.header_año').fadeIn()
+        $('.form_año').fadeIn()
+      } else if (radioValue == 'rango') {
+        $('.header_rango').fadeIn()
+        $('.form_rango').fadeIn()
+      }
+    });
+  });
+</script>
+
+<!--CHARTJS-->
+<script>
+  $(function () {
+
+    data = {
+      datasets: [{
+        data: [10, 20, 30]
+      }],
+
+      // These labels appear in the legend and in the tooltips when hovering different arcs
+      labels: [
+        'Red',
+        'Yellow',
+        'Blue'
+      ]
+    };
+
+    $(".asesor-porcentajes-ganancia").each(function (index, element) {
+      new Chart(element, {
+        type: 'doughnut',
+        data: data,
+        options: Chart.defaults.doughnut
+      });
+    })
+  })
+</script>
+
+<!--
+      ENABLE TOOLTIPS
+    -->
+<script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+<!--
+      GET INFO
+    -->
+<script>
+  function get_info(tipo) {
+    // SPINNER
+    $('.spinner-grow').fadeIn()
+
+    // GET DATA
+    data = {};
+    data.tipo = tipo;
+
+    // GET DATA TYPE
+    if (tipo == 'rango') {
+      data.inicio = document.getElementById('input_rango_inicio').value;
+      data.fin = document.getElementById('input_rango_fin').value;
+    } if (tipo == 'mes') {
+      data.fecha = document.getElementById('input_mes').value;
+    } if (tipo == 'año') {
+      data.fecha = document.getElementById('input_año').value;
+    }
+
+    if (document.getElementById("filtro_asesor").value) {
+      data.asesor = document.getElementById("filtro_asesor").value;
+    }
+
+    // AJAX
+    $.ajax({
+      type: 'post',
+      data: data,
+      cache: false,
+      headers: { "X-CSRFToken": Cookies.get('csrftoken') },
+      success: function (response) {
+        // PRINT INFO
+        console.log(response)
+
+        // DISMISS SPINNER
+        $('.spinner-grow').fadeOut()
+
+        // RENDER DATA
+        // CARDS
+        document.getElementsByClassName('no_ordenes_totales')[0].innerText = (response.no_ordenes_totales);
+        document.getElementsByClassName('no_ordenes_enviadas')[0].innerText = (response.no_ordenes_enviadas);
+        document.getElementsByClassName('no_ordenes_autorizadas')[0].innerText = (response.no_ordenes_autorizadas);
+
+        document.getElementsByClassName('total_autorizado')[0].innerText = (response.total_autorizado);
+        document.getElementsByClassName('items_promedio')[0].innerText = response.items_promedio;
+
+        // GRAPHS
+        try {
+          var average_ticket = $('#ticket').highcharts();
+
+          average_ticket.update({
+            categories: response.categories,
+            series: response.series,
+            colors: ["#a56de2", "#f37329"]
+          }, true, true);
+        } catch (error) {
+
+        }
+
+        $(".card-container").empty();
+        // TARJETAS DE ASESOR
+        response.tarjetas_asesor.forEach(asesor => {
+          let nueva_tarjeta = $(".tarjeta-asesor").clone(true, true);
+          $(nueva_tarjeta).find(".asesor-nombre").text(asesor.asesor_nombre);
+          $(nueva_tarjeta).find(".asesor-ordenes").text(asesor.asesor_ordenes);
+          $(nueva_tarjeta).find(".asesor-ordenes-enviadas").text(asesor.asesor_ordenes_enviadas);
+          $(nueva_tarjeta).find(".asesor-ordenes-autorizadas").text(asesor.asesor_ordenes_autorizadas);
+          $(nueva_tarjeta).find(".asesor-porcentaje-efectividad").text(asesor.asesor_porcentaje_efectividad);
+
+          $(nueva_tarjeta).find(".asesor-monto-ssl").text(asesor.asesor_monto_ssl);
+          $(nueva_tarjeta).find(".asesor-monto-total").text(asesor.asesor_monto_total);
+
+          $(nueva_tarjeta).fadeIn(400, function () {
+            $(".card-container").append(nueva_tarjeta);
+          });
+        });
+        // CHARTJS
+
+      }
+    });
+  }
+</script>
+
+<!--
+      AVERAGE CONSULTANT TICKET CHARGE
+    -->
+<script>
+  Highcharts.chart('ticket', {
+    chart: {
+      type: 'column',
+      backgroundColor: true,
+    },
+    title: {
+      text: 'Monto ticket promedio de Seguimiento En Línea por Asesor',
+      style: { color: '#FFFFFF' },
+    },
+    subtitle: {
+      text: 'Unidades en Miles de Dólares (USD)',
+      style: { color: '#FFFFFF' }
+    },
+    xAxis: {
+      //categories: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+      labels: {
+        style: {
+          color: '#FFFFFF'
+        }
+      },
+
+    },
+    yAxis: {
+      title: {
+        text: 'x1K USD',
+        style: { color: '#FFFFFF' },
+
+
+      },
+
+      labels: {
+        style: {
+          color: '#FFFFFF'
+        }
+      },
+
+    },
+    plotOptions: {
+      column: {
+        dataLabels: {
+          enabled: true,
+          style: { color: '#FFFFFF' }
+
+        },
+        enableMouseTracking: true
+      }
+    },
+
+    legend: {
+      itemStyle: {
+        color: '#FFFFFF',
+        fontWeight: 'bold'
+      },
+      align: 'center',
+      verticalAlign: 'bottom',
+      layout: 'horizontal'
+    },
+
+
+
+
+    //series: [{
+    //    //name: 'Asesor 1',
+    //    //data: [1.35, 1.20, 1.0, 2.4, 2.0, 1.6, 1.5, 2.2, 2.5, 1.6, 1.2, 1.5],
+    //    
+    //},
+    //{
+    //    //name: 'Asesor 2',
+    //    //data: [1.65, 1.45, 1.9, 1.5, 2.5, 1.4, 1.5, 2.4, 2.5, 1.3, 1.3, 1.9],
+    //    color: '#f25757'
+    //}    
+    //]
+  });
+
+
+
+
+</script>
+
+<script>
+  Highcharts.chart('container1', {
+    chart: {
+      type: 'column',
+      backgroundColor: true,
+    },
+    title: {
+      text: 'Montos Autorizados/No Autorizados',
+      style: { color: '#FFFFFF' },
+    },
+    subtitle: {
+      text: 'Montos expresados en miles de dólares.',
+      style: { color: '#FFFFFF' }
+    },
+    xAxis: {
+      categories: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+      labels: {
+        style: {
+          color: '#FFFFFF'
+        }
+      },
+
+    },
+    yAxis: {
+      title: {
+        text: 'Porcentaje',
+        style: { color: '#FFFFFF' },
+
+
+      },
+
+      labels: {
+        style: {
+          color: '#FFFFFF'
+        }
+      },
+
+    },
+
+    tooltip: {
+      pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>${point.y}K</b> ({point.percentage:.0f}%)<br/>',
+      shared: true
+    },
+
+
+
+    plotOptions: {
+      column: {
+        dataLabels: {
+          enabled: false,
+        },
+
+        stacking: 'percent',
+
+      }
+    },
+
+    legend: {
+      itemStyle: {
+        color: '#FFFFFF',
+        fontWeight: 'bold'
+      },
+      align: 'center',
+      verticalAlign: 'bottom',
+      layout: 'horizontal'
+    },
+
+
+
+
+    series: [{
+      name: 'Autorizado',
+      data: [6.3, 7.20, 7.0, 6.4, 8.0, 7.6, 4.5, 6.2, 7.5, 9.6, 9.2, 9.5],
+      color: '#ff8336'
+
+    },
+    {
+      name: 'No Autorizado',
+      data: [8.65, 11.45, 10.9, 8.5, 9.5, 6.4, 6.5, 7.4, 6.5, 3.3, 4.3, 3.9],
+      color: '#47b5b0'
+    }
+    ]
+  });
+
+
+
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/js/bootstrap4-toggle.min.js"></script>
+</body>
+
+</html>
+{% endblock %}

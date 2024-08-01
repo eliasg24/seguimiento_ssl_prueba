@@ -1,0 +1,517 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %} {% block content %} {% load static %} {% load mathfilters %}
+<div class="container-fluid mx-auto">
+  <!--TARJETA DE INFORMACION-->
+  <div class="card shadow mt-4 mx-auto">
+    <h5 class="card-header">
+      <a href="{% url 'mano_de_obra' %}" type="button" class="btn btn-light shadow-sm my-auto mr-3">
+        <i class="fas fa-chevron-left fa-lg"></i>
+        Atrás
+      </a>
+      Informacion de la Orden
+    </h5>
+    <div class="card-body">
+      <h5>Orden de Servicio: {{orden.no_orden}}</h5>
+      <h6>Placas: {{orden.placas}}</h6>
+      <h6>VIN: {{orden.vin}}</h6>
+      <h6>Cliente: {{orden.cliente}}</h6>
+      <h6>Vehículo: {{orden.vehiculo}}</h6>
+      <h6>Asesor: {{orden.asesor|lower|title}}</h6>
+      {% for tecnico in tecnicos %} {% if tecnico.id_empleado == orden.tecnico %}
+      <h6>Técnico: {{tecnico.nombre_empleado|lower|title}}</h6>
+      {% endif %} {% endfor %}
+      <h6>Fecha de Elaboración Tecnica: {{fin_tecnico}}</h6>
+      <button class="btn btn-primary my-3 shadow galeria_evidencias">
+        <i class="fas fa-photo-video fa-lg"></i>
+        Registro fotográfico
+      </button>
+    </div>
+  </div>
+
+  <div class="alert bg-secondary rounded text-light my-4 shadow" role="alert">
+    <i class="fas fa-exclamation-circle fa-lg"></i>
+    <strong>Importante</strong> Recuerde usar puntos para separar los decimales, por ejemplo 20.5
+  </div>
+
+  <div class="card shadow my-4 mx-auto">
+    <h5 class="card-header">
+      Inspección
+    </h5>
+
+    {% for item in items_tecnico %}
+    <table class="item table table-sm table-stripped table-hover table-responsive-md border shadow-sm mb-5 mx-auto"
+      data-item_id="{{item.id}}">
+
+      <!-- Header de item -->
+      <tr class="bg-light text-dark">
+        <td class="text-left" colspan="4">
+
+          <h6>
+            <!--Estado del item-->
+            {% if item.estado == 'Inmediato' %}
+            <span class="badge badge-pill badge-danger text-light ml-0">Inmediato</span>
+            {% endif %}
+            {% if item.estado == 'Recomendado' %}
+            <span class="badge badge-pill badge-warning text-light ml-0">Recomendado</span>
+            {% endif %}
+            {% if item.estado == 'Corregido' %}
+            <span class="badge badge-pill badge-primary ml-0">Corregido</span>
+            {% endif %}
+            <!--Nombre del item-->
+            <strong>{{item.item.familia.nombre}} - {{item.item.descripcion}}</strong>
+          </h6>
+
+        </td>
+        <td class="text-left" colspan="4">
+          <!--Comentarios del item-->
+          <p>{{item.comentarios}}</p>
+        </td>
+      </tr>
+
+      <tr class="bg-light text-dark">
+        <td class="text-center" colspan="7">
+          <strong>Repuestos</strong>
+        </td>
+        <td></td>
+      </tr>
+
+      <tr class="bg-light text-dark">
+        <td class="text-center"><strong>No. Parte</strong></td>
+        <td class="text-center"><strong>Nombre</strong></td>
+        <td class="text-center"><strong>Cantidad</strong></td>
+        <td class="text-center"><strong>Precio</strong></td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_REFACCIONES %} d-none {% endif %}">
+          <strong>Descuento</strong>
+        </td>
+        <td class="text-center"><strong>Subtotal</strong></td>
+        <td class="text-center"><strong>Existencia</strong></td>
+        <td class="text-center"><strong>Ubicación</strong></td>
+      </tr>
+
+      <!--
+        Seccion de refacciones, copiar y pegar el caso cuando
+        hay una inspeccion ya guardada, retirar botones, poner 
+        todos los inputs como disabled
+      -->
+      {% if refacciones %}
+      {% for refaccion in refacciones %}
+      {% if refaccion.item.id == item.id %}
+      <tr class="refaccion text-center" data-refaccion_id="{{refaccion.id}}">
+        <td class="text-center" style="width: 12%;">
+          <input class="refaccion-no-parte form-control" type="text" value="{{refaccion.no_parte}}" disabled
+            onkeyup="this.value = this.value.toUpperCase().replace(/[^a-zA-Z0-9-ñÑ]/g, '');"></input>
+        </td>
+        <td class="text-center">
+          <input class="refaccion-nombre form-control" type="text" value="{{refaccion.nombre}}" disabled></input>
+        </td>
+        <td class="text-center" style="width: 7%;">
+          <input class="refaccion-cantidad form-control" type="number" value="{{refaccion.cantidad}}" min="0"
+            disabled></input>
+        </td>
+        <td class="text-center" style="width: 9%;">
+          <input class="refaccion-precio form-control" type="number" value="{{refaccion.precio_unitario}}" min="0"
+            disabled></input>
+        </td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_REFACCIONES %} d-none {% endif %}"
+          style="width: 7%;">
+          <input class="refaccion-descuento form-control" type="number" value="{{refaccion.porcentaje_descuento}}"
+            min="0" disabled></input>
+        </td>
+        <td class="text-center" style="width: 9%;">
+          <input class="refaccion-subtotal form-control" type="number" value="{{refaccion.subtotal_iva}}" min="0"
+            disabled></input>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-existencia form-control" disabled>
+            <option value="{{refaccion.existencia}}" selected>{{refaccion.existencia}}</option>
+            <option value="Si">Si</option>
+            <option value="No">No</option>
+          </select>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-localizacion form-control" disabled>
+            <option value="{{refaccion.localizacion}}" selected>{{refaccion.localizacion}}</option>
+            <option value="Provincia">Provincia</option>
+            <option value="Importación">Importación</option>
+            <option value="B Central">B Central</option>
+            <option value="Almacén">Almacén</option>
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% else %}
+      <tr class="refaccion text-center">
+        <td class="text-center" colspan="8">
+          <p class="text-center">No hay repuestos cotizados para este item</p>
+        </td>
+      </tr>
+      {% endif %}
+
+      <!--Mano de obra-->
+      <tr class="bg-light text-dark">
+        <td class="text-center" colspan="7">
+          <strong>Mano de obra</strong>
+        </td>
+        <td class="text-right">
+          <button class="nueva-mano-de-obra btn btn-outline-primary shadow-sm mx-auto" data-toggle="tooltip"
+            data-placement="top" title="Añadir mano de obra">
+            <i class="fas fa-plus fa-lg"></i>
+          </button>
+        </td>
+      </tr>
+      <tr class="bg-light text-dark">
+        <td class="text-center"></td>
+        <td class="text-center">
+          <strong>Código MO</strong>
+        </td>
+        <td class="text-center" colspan="2">
+          <strong>Nombre</strong>
+        </td>
+        <td class="text-center">
+          <strong>UTS</strong>
+        </td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_MANO_DE_OBRA %} d-none {% endif %}">
+          <strong>Descuento</strong>
+        </td>
+        <td class="text-center">
+          <strong>Subtotal</strong>
+        </td>
+        <td class="text-center">
+          <strong>Cargo</strong>
+        </td>
+      </tr>
+
+      {% if not mano_de_obra %}
+      <tr class="mano-de-obra text-center">
+        <td class="text-center"></td>
+        <td class="text-center">
+          <div class="mb-3">
+            <input class="mano-de-obra-codigo form-control" type="text">
+          </div>
+        </td>
+        <td class="text-center" colspan="2">
+          <input class="mano-de-obra-nombre form-control" type="text"></input>
+        </td>
+        <td class="text-center">
+          <input class="mano-de-obra-uts form-control" type="number" value="0" min="0"></input>
+        </td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_MANO_DE_OBRA %} d-none {% endif %}">
+          <input class="mano-de-obra-descuento form-control" type="number" value="0" min="0"></input>
+        </td>
+        <td class="text-center">
+          <input class="mano-de-obra-subtotal form-control" type="number" value="0" min="0" disabled></input>
+        </td>
+        <td class="text-center">
+          <select class="mano-de-obra-cargo form-control">
+            {% for cargo in cargos %}
+            <option value="{{cargo.id}}">{{cargo.descripcion}}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+
+      {% if mano_de_obra %}
+      {% for mo in mano_de_obra %}
+      {% if mo.item.id == item.id %}
+      <tr class="mano-de-obra text-center" data-mano_de_obra_id="{{mo.id}}">
+        <td class="text-center">
+          {% if forloop.counter == 1 %}
+          <button class="remover-primera-mano-de-obra btn btn-outline-danger shadow-sm mx-auto" data-toggle="tooltip"
+            data-placement="top" title="Remover mano de obra">
+            <i class="fas fa-minus-circle fa-lg"></i>
+          </button>
+          {% else %}
+          <button class="remover-mano-de-obra btn btn-outline-danger shadow-sm mx-auto">
+            <i class="fas fa-minus-circle fa-lg"></i>
+          </button>
+          {% endif %}
+        </td>
+        <td class="text-center">
+          <input class="mano-de-obra-codigo form-control" type="text" value="{{mo.codigo}}">
+        </td>
+        <td class="text-center" colspan="2">
+          <input class="mano-de-obra-nombre form-control" type="text" value="{{mo.nombre}}"></input>
+        </td>
+        <td class="text-center">
+          <input class="mano-de-obra-uts form-control" type="number" min="0" value="{{mo.cantidad_uts}}"></input>
+        </td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_MANO_DE_OBRA %} d-none {% endif %}">
+          <input class="mano-de-obra-descuento form-control" type="number" min="0"
+            value="{{mo.porcentaje_descuento}}"></input>
+        </td>
+        <td class="text-center">
+          <input class="mano-de-obra-subtotal form-control" type="number" min="0" value="{{mo.subtotal_iva}}"
+            disabled></input>
+        </td>
+        <td class="text-center">
+          <select class="mano-de-obra-cargo form-control">
+            <option value="{{mo.cargo.id}}" selected>{{mo.cargo.descripcion}}</option>
+            {% for cargo in cargos %}
+            <option value="{{cargo.id}}">{{cargo.descripcion}}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+
+    </table>
+    {% endfor %}
+
+    <div class="text-center mt-3 mb-4">
+      <button type="button" class="guardar-inspeccion btn btn-success shadow">
+        <i class="far fa-save fa-lg"></i>
+        Guardar inspección
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!--Guardar inspección-->
+<script>
+  $(".guardar-inspeccion").click(function () {
+    Swal.fire({
+      title: "¿Desea guardar la inspección?",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonText: "Confirmar",
+      reverseButtons: true,
+      buttonsStyling: false,
+      focusConfirm: false,
+      focusCancel: false,
+      customClass: {
+        popup: "card bg-light rounded",
+        confirmButton: "btn btn-success mx-3 shadow rounded",
+        closeButton: "btn btn-light mx-3 shadow rounded",
+        denyButton: "btn btn-light mx-3 shadow rounded",
+        cancelButton: "btn btn-light mx-3 shadow rounded",
+      }
+    }).then(result => {
+      if (result.value == true) {
+
+        let data = {};
+        let lista_mano_de_obra_detalles = [];
+
+        $(".mano-de-obra").each(function (index, mano_de_obra) {
+          let mano_de_obra_detalles = {};
+
+          mano_de_obra_detalles.item_id = $(mano_de_obra).parents("table").data("item_id");
+          mano_de_obra_detalles.codigo = $(mano_de_obra).find(".mano-de-obra-codigo").val();
+          mano_de_obra_detalles.nombre = $(mano_de_obra).find(".mano-de-obra-nombre").val();
+
+          mano_de_obra_detalles.uts = $(mano_de_obra).find(".mano-de-obra-uts").val();
+          mano_de_obra_detalles.precio_ut = Number("{{ precio_ut }}");
+          mano_de_obra_detalles.porcentaje_descuento = $(mano_de_obra).find(".mano-de-obra-descuento").val();
+          mano_de_obra_detalles.subtotal = $(mano_de_obra).find(".mano-de-obra-subtotal").val();
+
+          mano_de_obra_detalles.cargo = $(mano_de_obra).find(".mano-de-obra-cargo").first().val();
+          if (mano_de_obra_detalles.codigo && mano_de_obra_detalles.nombre) {
+            lista_mano_de_obra_detalles.push(mano_de_obra_detalles);
+          }
+        })
+
+        data = {
+          "guardar_inspeccion": true,
+          "mano_de_obra": JSON.stringify(lista_mano_de_obra_detalles),
+        }
+
+        console.log(data);
+
+        $.ajax({
+          type: "post",
+          data: data,
+          cache: false,
+          headers: {
+            "X-CSRFToken": Cookies.get("csrftoken")
+          },
+          success: function () {
+            Swal.fire({
+              title: "Inspección guardada",
+              confirmButtonText: "Cerrar",
+              buttonsStyling: false,
+              customClass: {
+                popup: "card bg-light rounded",
+                confirmButton: "btn btn-light mx-3 shadow rounded",
+              }
+            })
+          },
+          error: function (error) {
+            Swal.fire("Ha ocurrido un error", error);
+          }
+        });
+      }
+    });
+  });
+</script>
+
+<!--Añadir/Retirar mano de obra-->
+<script>
+  $(".nueva-mano-de-obra").click(function () {
+    let item = $(this).parents("tbody");
+    const nueva_mano_de_obra = `
+      <tr class="mano-de-obra text-center">
+        <td class="text-center">
+          <button class="remover-mano-de-obra btn btn-outline-danger shadow-sm mx-auto" data-toggle="tooltip" data-placement="top" title="Remover mano de obra">
+            <i class="fas fa-minus-circle fa-lg"></i>
+          </button>
+        </td>
+        <td class="text-center">
+          <input class="mano-de-obra-codigo form-control" type="text">
+        </td>
+        <td class="text-center" colspan="2"><input class="mano-de-obra-nombre form-control" type="text"></input></td>
+        <td class="text-center"><input class="mano-de-obra-uts form-control" type="number" value="0" min="0"></input></td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_MANO_DE_OBRA %} d-none {% endif %}">
+          <input class="mano-de-obra-descuento form-control" type="number" value="0" min="0"></input>
+        </td>
+        <td class="text-center"><input class="mano-de-obra-subtotal form-control" type="number" value="0" min="0" disabled></input></td>
+        <td class="text-center">
+          <select class="mano-de-obra-cargo form-control">
+            {% for cargo in cargos %}
+            <option value="{{cargo.id}}">{{cargo.descripcion}}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+    `
+    $(item).append(nueva_mano_de_obra);
+  })
+
+  // Borrar la primer mano de obra guardada
+  $(document).on("click", ".remover-primera-mano-de-obra", function () {
+    Swal.fire({
+      title: "¿Desea remover la mano de obra?",
+      text: "Esta acción no se puede deshacer",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonText: "Confirmar",
+      reverseButtons: true,
+      buttonsStyling: false,
+      focusConfirm: false,
+      focusCancel: false,
+      customClass: {
+        popup: "card bg-light rounded",
+        confirmButton: "btn btn-danger mx-3 shadow rounded",
+        closeButton: "btn btn-light mx-3 shadow rounded",
+        denyButton: "btn btn-light mx-3 shadow rounded",
+        cancelButton: "btn btn-light mx-3 shadow rounded",
+      }
+    }).then(result => {
+      if (result.value == true) {
+        let boton = $(this);
+        let mano_de_obra = $(this).parents(".mano-de-obra");
+        try {
+          let data = {};
+          data.mano_de_obra_id = mano_de_obra.data("mano_de_obra_id");
+          data.borrado_mano_de_obra = true;
+
+          if (data.mano_de_obra_id) {
+            console.log(data)
+            $.ajax({
+              type: "post",
+              data: data,
+              cache: false,
+              headers: {
+                "X-CSRFToken": Cookies.get('csrftoken')
+              }
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        }
+        $(mano_de_obra).find(".form-control").each(function () {
+          $(this).val("");
+        })
+        mano_de_obra.data("mano_de_obra_id", "");
+        boton.remove();
+      }
+    })
+  })
+
+  // Borrar mano de obra existente o nueva que no esta en la primer posición
+  $(document).on("click", ".remover-mano-de-obra", function () {
+    Swal.fire({
+      title: "¿Desea remover la mano de obra?",
+      text: "Esta acción no se puede deshacer",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonText: "Confirmar",
+      reverseButtons: true,
+      buttonsStyling: false,
+      focusConfirm: false,
+      focusCancel: false,
+      customClass: {
+        popup: "card bg-light rounded",
+        confirmButton: "btn btn-danger mx-3 shadow rounded",
+        closeButton: "btn btn-light mx-3 shadow rounded",
+        denyButton: "btn btn-light mx-3 shadow rounded",
+        cancelButton: "btn btn-light mx-3 shadow rounded",
+      }
+    }).then(result => {
+      if (result.value == true) {
+        let mano_de_obra = $(this).parents(".mano-de-obra");
+        try {
+          let data = {};
+          data.mano_de_obra_id = mano_de_obra.data("mano_de_obra_id");
+          data.borrado_mano_de_obra = true;
+
+          if (data.mano_de_obra_id) {
+            $.ajax({
+              type: "post",
+              data: data,
+              cache: false,
+              headers: {
+                "X-CSRFToken": Cookies.get('csrftoken')
+              }
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        }
+        mano_de_obra.remove();
+      }
+    })
+  })
+</script>
+
+<!--Subtotales-->
+<script>
+  // Al teclear
+  $(document).on("keyup", ".mano-de-obra-uts, .mano-de-obra-descuento", function () {
+    let mano_de_obra = $(this).parents(".mano-de-obra");
+
+    let cantidad = Number($(mano_de_obra).find(".mano-de-obra-uts").val());
+    let precio_ut = Number("{{ precio_ut }}");
+    let porcentaje_descuento = Number($(mano_de_obra).find(".mano-de-obra-descuento").val());
+    let iva = Number("{{ iva }}");
+
+    let subtotal_sin_descuento = (cantidad * precio_ut) * iva;
+    let subtotal_con_descuento = subtotal_sin_descuento - ((subtotal_sin_descuento / 100) * porcentaje_descuento);
+
+    $(mano_de_obra).find(".mano-de-obra-subtotal").val(subtotal_con_descuento.toFixed(2));
+  })
+
+  // Al cargar
+  $(function () {
+    $(".mano-de-obra").each(function (index, mano_de_obra) {
+      let cantidad = Number($(mano_de_obra).find(".mano-de-obra-uts").val());
+      let precio_ut = Number("{{ precio_ut }}");
+      let porcentaje_descuento = Number($(mano_de_obra).find(".mano-de-obra-descuento").val());
+      let iva = Number("{{ iva }}");
+
+      let subtotal_sin_descuento = (cantidad * precio_ut) * iva;
+      let subtotal_con_descuento = subtotal_sin_descuento - ((subtotal_sin_descuento / 100) * porcentaje_descuento);
+
+      $(mano_de_obra).find(".mano-de-obra-subtotal").val(subtotal_con_descuento.toFixed(2));
+    })
+  })
+</script>
+
+<script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+{% endblock %}

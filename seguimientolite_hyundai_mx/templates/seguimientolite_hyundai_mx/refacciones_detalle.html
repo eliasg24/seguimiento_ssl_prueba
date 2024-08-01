@@ -1,0 +1,464 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %} {% block content %} {% load static %} {% load mathfilters %}
+<div class="container-fluid mx-auto">
+  <!--TARJETA DE INFORMACION-->
+  <div class="card shadow mt-4 mx-auto">
+    <h5 class="card-header">
+      <a href="{% url 'refacciones' %}" type="button" class="btn btn-light shadow-sm my-auto mr-3">
+        <i class="fas fa-chevron-left fa-lg"></i>
+        Atrás
+      </a>
+      Información de la Orden
+    </h5>
+    <div class="card-body">
+      <h5>Orden de Servicio: {{orden.no_orden}}</h5>
+      <h6>Placas: {{orden.placas}}</h6>
+      <h6>VIN: {{orden.vin}}</h6>
+      <h6>Cliente: {{orden.cliente}}</h6>
+      <h6>Vehiculo: {{orden.vehiculo}}</h6>
+      <h6>Asesor: {{orden.asesor|lower|title}}</h6>
+      {% for tecnico in tecnicos %} {% if tecnico.id_empleado == orden.tecnico %}
+      <h6>Tecnico: {{tecnico.nombre_empleado|lower|title}}</h6>
+      {% endif %} {% endfor %}
+      <h6>Fecha de Elaboración Tecnica: {{fin_tecnico}}</h6>
+      <button class="btn btn-primary my-3 shadow galeria_evidencias">
+        <i class="fas fa-photo-video fa-lg"></i>
+        Registro fotográfico
+      </button>
+    </div>
+  </div>
+
+  <div class="alert bg-secondary rounded text-light my-4 shadow" role="alert">
+    <i class="fas fa-exclamation-circle fa-lg"></i>
+    <strong>Importante</strong> Recuerde usar puntos para separar los decimales, por ejemplo 20.5
+  </div>
+
+  <div class="card shadow my-4 mx-auto tarjeta-inspeccion">
+    <h5 class="card-header">
+      Inspección
+    </h5>
+
+    {% for item in items_tecnico %}
+    <table class="item table table-sm table-stripped table-hover table-responsive-md border shadow-sm mb-5 mx-auto"
+      data-item_id="{{item.id}}">
+
+      <!-- Header de item -->
+      <tr class="bg-light text-dark">
+        <td class="text-left" colspan="4">
+
+          <h6>
+            <!--Estado del item-->
+            {% if item.estado == 'Inmediato' %}
+            <span class="badge badge-pill badge-danger text-light ml-0">Inmediato</span>
+            {% endif %}
+            {% if item.estado == 'Recomendado' %}
+            <span class="badge badge-pill badge-warning text-light ml-0">Recomendado</span>
+            {% endif %}
+            {% if item.estado == 'Corregido' %}
+            <span class="badge badge-pill badge-primary ml-0">Corregido</span>
+            {% endif %}
+            <!--Nombre del item-->
+            <strong>{{item.item.familia.nombre}} - {{item.item.descripcion}}</strong>
+          </h6>
+
+        </td>
+        <td class="text-left" colspan="4">
+          <!--Comentarios del item-->
+          <p>{{item.comentarios}}</p>
+        </td>
+        <td class="text-right">
+          <!--Añadir repuesto-->
+          <button class="nueva-refaccion btn btn-outline-primary shadow-sm mx-auto" data-toggle="tooltip"
+            data-placement="top" title="Añadir Repuesto">
+            <i class="fas fa-plus fa-lg"></i>
+          </button>
+        </td>
+      </tr>
+
+      <!-- Header de refacción -->
+      <tr class="bg-light text-dark">
+        <td class="text-center"><strong></strong></td>
+        <td class="text-center"><strong>No. Parte</strong></td>
+        <td class="text-center"><strong>Nombre</strong></td>
+        <td class="text-center"><strong>Cantidad</strong></td>
+        <td class="text-center"><strong>Precio</strong></td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_REFACCIONES %} d-none {% endif %}">
+          <strong>Descuento</strong>
+        </td>
+        <td class="text-center"><strong>Subtotal</strong></td>
+        <td class="text-center"><strong>Existencia</strong></td>
+        <td class="text-center"><strong>Ubicación</strong></td>
+      </tr>
+
+      <!--Cuando no hay refacciones guardadas-->
+      {% if not refacciones %}
+      <tr class="refaccion text-center">
+        <td class="text-center"></td>
+        <td class="text-center" style="width: 12%;">
+          <input class="refaccion-no-parte form-control" type="text"
+            onkeyup="this.value = this.value.toUpperCase().replace(/[^a-zA-Z0-9-ñÑ]/g, '');"></input>
+        </td>
+        <td class="text-center">
+          <input class="refaccion-nombre form-control" type="text"></input>
+        </td>
+        <td class="text-center" style="width: 7%;">
+          <input class="refaccion-cantidad form-control" type="number" value="0" min="0"></input>
+        </td>
+        <td class="text-center" style="width: 13%;">
+          <input class="refaccion-precio form-control" type="number" value="0" min="0"></input>
+        </td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_REFACCIONES %} d-none {% endif %}"
+          style="width: 7%;">
+          <input class="refaccion-descuento form-control" type="number" value="0" min="0"></input>
+        </td>
+        <td class="text-center" style="width: 13%;">
+          <input class="refaccion-subtotal form-control" type="number" value="0" min="0" disabled></input>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-existencia form-control">
+            <option value="" selected>---</option>
+            <option value="Si">Si</option>
+            <option value="No">No</option>
+          </select>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-localizacion form-control">
+            <option value="" selected>---</option>
+            {% for ubicacion in ubicaciones %}
+            <option value="{{ ubicacion }}">{{ ubicacion }}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+
+      <!--Cuando ya hay refacciones guardadas-->
+      {% if refacciones %}
+      {% for refaccion in refacciones %}
+      {% if refaccion.item.id == item.id %}
+      <!--Primer fila-->
+      <tr class="refaccion text-center" data-refaccion_id="{{refaccion.id}}">
+        <td class="text-center">
+          {% ifchanged refaccion.item %}
+          <!--Añadir refaccion-->
+          <div class="text-center">
+            <button class="eliminar-primer-refaccion btn btn-outline-danger shadow-sm" data-toggle="tooltip"
+              data-placement="top" title="Remover Repuesto">
+              <i class="fas fa-minus-circle fa-lg"></i>
+            </button>
+          </div>
+          {% else %}
+          <button class="eliminar-refaccion btn btn-outline-danger shadow-sm mx-auto">
+            <i class="fas fa-minus-circle fa-lg"></i>
+          </button>
+          {% endifchanged %}
+        </td>
+        <td class="text-center" style="width: 12%;">
+          <input class="refaccion-no-parte form-control" type="text" value="{{refaccion.no_parte}}" disabled
+            onkeyup="this.value = this.value.toUpperCase().replace(/[^a-zA-Z0-9-ñÑ]/g, '');"></input>
+        </td>
+        <td class="text-center">
+          <input class="refaccion-nombre form-control" type="text" value="{{refaccion.nombre}}"></input>
+        </td>
+        <td class="text-center" style="width: 7%;">
+          <input class="refaccion-cantidad form-control" type="number" value="{{refaccion.cantidad}}" min="0"></input>
+        </td>
+        <td class="text-center" style="width: 13%;">
+          <input class="refaccion-precio form-control" type="number" value="{{refaccion.precio_unitario}}"
+            min="0"></input>
+        </td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_REFACCIONES %} d-none {% endif %}"
+          style="width: 7%;">
+          <input class="refaccion-descuento form-control" type="number" value="{{refaccion.porcentaje_descuento}}"
+            min="0"></input>
+        </td>
+        <td class="text-center" style="width: 13%;">
+          <input class="refaccion-subtotal form-control" type="number" value="{{refaccion.subtotal_iva}}" min="0"
+            disabled></input>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-existencia form-control">
+            <option value="{{refaccion.existencia}}" selected>{{refaccion.existencia}}</option>
+            <option value="Si">Si</option>
+            <option value="No">No</option>
+          </select>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-localizacion form-control">
+            <option value="{{refaccion.localizacion}}" selected>{{refaccion.localizacion}}</option>
+            {% for ubicacion in ubicaciones %}
+            <option value="{{ ubicacion }}">{{ ubicacion }}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+    </table>
+    {% endfor %}
+
+    <div class="text-center mt-3 mb-4">
+      <button type="button" class="guardar-inspeccion btn btn-success shadow">
+        <i class="far fa-save fa-lg"></i>
+        Guardar inspección
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!--Guardar inspección-->
+<script>
+  $(".guardar-inspeccion").click(function () {
+    let tarjeta_inspeccion = document.querySelector(".tarjeta-inspeccion")
+
+    Swal.fire({
+      title: "¿Desea guardar la inspección?",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonText: "Confirmar",
+      reverseButtons: true,
+      buttonsStyling: false,
+      focusConfirm: false,
+      focusCancel: false,
+      customClass: {
+        popup: "card bg-light rounded",
+        confirmButton: "btn btn-success mx-3 shadow rounded",
+        closeButton: "btn btn-light mx-3 shadow rounded",
+        denyButton: "btn btn-light mx-3 shadow rounded",
+        cancelButton: "btn btn-light mx-3 shadow rounded",
+      }
+    }).then(result => {
+      if (result.value == true) {
+
+        let data = {};
+        let refacciones_detalles = [];
+
+        $(".refaccion").each(function (index, refaccion) {
+          let refaccion_detalles = {};
+
+          refaccion_detalles.item_id = $(refaccion).parents("table").data("item_id");
+          refaccion_detalles.no_parte = $(refaccion).find(".refaccion-no-parte").val();
+          refaccion_detalles.nombre = $(refaccion).find(".refaccion-nombre").val();
+
+          refaccion_detalles.cantidad = $(refaccion).find(".refaccion-cantidad").val();
+          refaccion_detalles.precio_unitario = $(refaccion).find(".refaccion-precio").val();
+          refaccion_detalles.porcentaje_descuento = $(refaccion).find(".refaccion-descuento").val();
+          refaccion_detalles.subtotal = $(refaccion).find(".refaccion-subtotal").val();
+
+          refaccion_detalles.existencia = $(refaccion).find(".refaccion-existencia").first().val();
+          refaccion_detalles.localizacion = $(refaccion).find(".refaccion-localizacion").first().val();
+
+          if (refaccion_detalles.no_parte && refaccion_detalles.nombre && Number(refaccion_detalles.cantidad)) {
+            refacciones_detalles.push(refaccion_detalles);
+          }
+        })
+
+        data = {
+          "guardar_inspeccion": true,
+          "refacciones": JSON.stringify(refacciones_detalles),
+        }
+
+        console.log(data);
+
+        $.ajax({
+          type: "post",
+          data: data,
+          cache: false,
+          headers: {
+            "X-CSRFToken": Cookies.get("csrftoken")
+          },
+          success: function () {
+            Swal.fire({
+              title: "Inspección guardada",
+              confirmButtonText: "Cerrar",
+              buttonsStyling: false,
+              customClass: {
+                popup: "card bg-light rounded",
+                confirmButton: "btn btn-light mx-3 shadow rounded",
+              }
+            })
+          },
+          error: function (error) {
+            Swal.fire("Ha ocurrido un error", error);
+          }
+        });
+      }
+    });
+  });
+</script>
+
+<!--Añadir/Retirar Refacciones-->
+<script>
+  $(".nueva-refaccion").click(function () {
+    let item = $(this).parents("tbody");
+    const nueva_refaccion = `
+      <tr class="refaccion text-center">
+        <td class="text-center">
+          <button class="eliminar-refaccion btn btn-outline-danger shadow-sm mx-auto" data-toggle="tooltip"
+            data-placement="top" title="Remover Repuesto">
+            <i class="fas fa-minus-circle fa-lg"></i>
+          </button>
+        </td>
+        <td class="text-center" style="width: 12%;"><input class="refaccion-no-parte form-control" type="text" onkeyup="this.value = this.value.toUpperCase().replace(/[^a-zA-Z0-9-ñÑ]/g, '');"></input></td>
+        <td class="text-center"><input class="refaccion-nombre form-control" type="text"></input></td>
+        <td class="text-center" style="width: 7%;"><input class="refaccion-cantidad form-control" type="number" value="0" min="0"></input></td>
+        <td class="text-center" style="width: 13%;"><input class="refaccion-precio form-control" type="number" value="0" min="0"></input></td>
+        <td class="text-center {% if not settings.SEGUIMIENTOLITE_DESCUENTO_REFACCIONES %} d-none {% endif %}" style="width: 7%;"><input class="refaccion-descuento form-control" type="number" value="0" min="0"></input></td>
+        <td class="text-center" style="width: 13%;"><input class="refaccion-subtotal form-control" type="number" value="0" min="0" disabled></input></td>
+        <td class="text-center">
+          <select class="refaccion-existencia form-control">
+            <option value="" selected>---</option>
+            <option value="Si">Si</option>
+            <option value="No">No</option>
+          </select>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-localizacion form-control">
+            <option value="" selected>---</option>
+            {% for ubicacion in ubicaciones %}
+            <option value="{{ ubicacion }}">{{ ubicacion }}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+    `
+    $(item).append(nueva_refaccion);
+  })
+
+  // Borrar la primer refaccion guardada
+  $(document).on("click", ".eliminar-primer-refaccion", function () {
+    Swal.fire({
+      title: "¿Desea remover el repuesto?",
+      text: "Esta acción no se puede deshacer",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonText: "Confirmar",
+      reverseButtons: true,
+      buttonsStyling: false,
+      focusConfirm: false,
+      focusCancel: false,
+      customClass: {
+        popup: "card bg-light rounded",
+        confirmButton: "btn btn-danger mx-3 shadow rounded",
+        closeButton: "btn btn-light mx-3 shadow rounded",
+        denyButton: "btn btn-light mx-3 shadow rounded",
+        cancelButton: "btn btn-light mx-3 shadow rounded",
+      }
+    }).then(result => {
+      if (result.value == true) {
+        let boton = $(this);
+        let refaccion = $(this).parents(".refaccion");
+        try {
+          let data = {};
+          data.refaccion_id = refaccion.data("refaccion_id");
+          data.borrado_refaccion = true;
+
+          if (data.refaccion_id) {
+            console.log(data)
+            $.ajax({
+              type: "post",
+              data: data,
+              cache: false,
+              headers: {
+                "X-CSRFToken": Cookies.get('csrftoken')
+              }
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        }
+        $(refaccion).find(".form-control").each(function () {
+          $(this).val("");
+        })
+        refaccion.data("refaccion_id", "");
+        boton.remove();
+      }
+    })
+  })
+
+  // Borrar refaccion existente o nueva que no esta en la primer posición
+  $(document).on("click", ".eliminar-refaccion", function () {
+    Swal.fire({
+      title: "¿Desea remover la refacción?",
+      text: "Esta acción no se puede deshacer",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonText: "Confirmar",
+      reverseButtons: true,
+      buttonsStyling: false,
+      focusConfirm: false,
+      focusCancel: false,
+      customClass: {
+        popup: "card bg-light rounded",
+        confirmButton: "btn btn-danger mx-3 shadow rounded",
+        closeButton: "btn btn-light mx-3 shadow rounded",
+        denyButton: "btn btn-light mx-3 shadow rounded",
+        cancelButton: "btn btn-light mx-3 shadow rounded",
+      }
+    }).then(result => {
+      if (result.value == true) {
+        let refaccion = $(this).parents(".refaccion");
+        try {
+          let data = {};
+          data.refaccion_id = refaccion.data("refaccion_id");
+          data.borrado_refaccion = true;
+
+          if (data.refaccion_id) {
+            $.ajax({
+              type: "post",
+              data: data,
+              cache: false,
+              headers: {
+                "X-CSRFToken": Cookies.get('csrftoken')
+              }
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        }
+        refaccion.remove();
+      }
+    })
+  })
+</script>
+
+<!--Subtotales-->
+<script>
+  // Al teclear
+  $(document).on("keyup", ".refaccion-cantidad, .refaccion-precio, .refaccion-descuento", function () {
+    let refaccion = $(this).parents(".refaccion");
+
+    let cantidad = Number($(refaccion).find(".refaccion-cantidad").val());
+    let precio_unitario = Number($(refaccion).find(".refaccion-precio").val());
+    let porcentaje_descuento = Number($(refaccion).find(".refaccion-descuento").val());
+    let iva = Number("{{ iva }}");
+
+    let subtotal_sin_descuento = (cantidad * precio_unitario) * iva;
+    let subtotal_con_descuento = subtotal_sin_descuento - ((subtotal_sin_descuento / 100) * porcentaje_descuento);
+
+    $(refaccion).find(".refaccion-subtotal").val(subtotal_con_descuento.toFixed(2));
+  })
+
+  // Al cargar
+  $(function () {
+    $(".refaccion").each(function (index, refaccion) {
+      let cantidad = Number($(refaccion).find(".refaccion-cantidad").val());
+      let precio_unitario = Number($(refaccion).find(".refaccion-precio").val());
+      let porcentaje_descuento = Number($(refaccion).find(".refaccion-descuento").val());
+      let iva = Number("{{ iva }}");
+
+      let subtotal_sin_descuento = (cantidad * precio_unitario) * iva;
+      let subtotal_con_descuento = subtotal_sin_descuento - ((subtotal_sin_descuento / 100) * porcentaje_descuento);
+
+      $(refaccion).find(".refaccion-subtotal").val(subtotal_con_descuento.toFixed(2));
+    })
+  })
+</script>
+
+<script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+{% endblock %}

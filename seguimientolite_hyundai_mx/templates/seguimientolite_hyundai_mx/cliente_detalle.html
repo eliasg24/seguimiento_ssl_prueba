@@ -1,0 +1,369 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+
+{% block tecnico-head %}
+{% load static %}
+{% load webpush_notifications %}
+{% webpush_header %}
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top mb-4">
+  <img src="{{ settings.LOGO }}" height="40" class="d-inline-block align-top mx-auto" />
+</nav>
+{% endblock %}
+
+{% block content %}
+{% load cliente_tools %}
+<div class="container">
+  <div class="text-center my-4">
+    <h4>Seguimiento en Línea</h4>
+  </div>
+
+  <div class="card-deck">
+    <div class="card my-4 shadow">
+      <h5 class="text-center my-3">Información de la orden</h5>
+      <div class="card-body">
+        <div class="row mb-2 mt-0">
+          <div class="col">
+            <h6 class="mb-0">Orden de Reparación:</h6>
+            {{orden.no_orden}}
+          </div>
+          <div class="col">
+            <h6 class="mb-0">Asesor:</h6>
+            {{orden.asesor}}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <h6 class="mt-2 mb-0">Vehículo:</h6>
+            {{orden.vehiculo}}
+          </div>
+          <div class="col">
+            <h6 class="mt-2 mb-0">Placas:</h6>
+            {{orden.placas}}
+          </div>
+        </div>
+        <div class="text-center mt-3">
+          {% comment %}
+          {% if user.is_authenticated %}
+          <a class="btn btn-success align-baseline shadow" href="/chat" style="display: none;">
+            <i class="fas fa-comments fa-lg mr-1"></i>
+            Chat con tu asesor
+          </a>
+          {% endif %}
+          {% webpush_button with_class="btn btn-primary" %}
+          {% endcomment %}
+        </div>
+      </div>
+    </div>
+    <div class="card my-4 shadow">
+      <h5 class="text-center my-3">Resumen de Diagnostico</h5>
+      <div class="card-body">
+        <div class="row row-flex mx-auto my-auto">
+          <div class="col text-center">
+            <button id="boton_rec" type="button" class="btn btn-warning shadow">
+              <i class="fas fa-info-circle fa-2x rounded-circle mt-3"></i>
+              <h4 class="mt-2">{{items_recomendados}}</h4>
+              <p class="mb-1">Reparación Sugerida</p>
+            </button>
+          </div>
+          <div class="col text-center">
+            <button id="boton_in" type="button" class="btn btn-danger shadow" style="height: 100%">
+              <i class="fas fa-exclamation-triangle fa-2x rounded-circle mt-3"></i>
+              <h4 class="mt-2">{{items_urgentes}}</h4>
+              <p class="mb-1">Reparación Urgente</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="my-4 mx-auto text-center">
+    <h5>Detalles de Cotización</h5>
+
+    <div class="alert alert-primary mt-3 mb-3" role="alert">
+      Para autorizar seleccione la opción de "si"
+    </div>
+
+    <div class="alert alert-success mt-3 mb-3" role="alert">
+      Todos los precios incluyen IVA
+    </div>
+
+    {% if items_tecnico %}
+    <div class="border-bottom text-center mb-3">
+      <h5>Ítems Reportados</h5>
+    </div>
+    {% for item in items_tecnico %}
+    <div class="card shadow my-4">
+      <table class="table table-sm table-responsive-sm table-sm mx-auto mb-0 shadow item" data-item_id="{{item.id}}">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="text-center align-middle" colspan="2">
+              <div class="text-center mt-2">
+                <h5>{{item.item.descripcion}}</h5>
+              </div>
+              <div class="text-center mb-2">
+                {% if item.estado == 'Inmediato' %}
+                <span class="badge badge-pill badge-danger">
+                  <i class="fas fa-exclamation-triangle fa-lg"></i>
+                  {{item.estado}}
+                </span>
+                {% endif %}
+                {% if item.estado == 'Recomendado' %}
+                <span class="badge badge-pill badge-warning">
+                  <i class="fas fa-exclamation-circle fa-lg"></i>
+                  {{item.estado}}
+                </span>
+                {% endif %}
+              </div>
+            </th>
+            <th class="text-right">
+              {% if item.item.familia.imagen or item.item.familia.video %}
+              <button class="btn btn-light shadow rounded-circle" data-toggle="modal"
+                data-target="#HelpModal{{ item.id }}">
+                <i class="fas fa-question fa-lg"></i>
+              </button>
+              {% endif %}
+            </th>
+          </tr>
+          <tr>
+            <th class="text-center align-middle" style="width: 25%;">
+              {% if item|tiene_evidencia:filas_video or item|tiene_evidencia:filas_media %}
+              <button type="button" class="btn btn-light shadow-sm evidencias" id="evidencias_{{item.id}}">
+                <i class="fas fa-camera fa-lg"></i>
+              </button>
+              {% endif %}
+            </th>
+            <th class="text-center align-middle" colspan="2">
+              <b>Total: $ </b>
+              <b class="total_item">
+                {% for total in totales_items %}
+                {% if total.item.id == item.id %}
+                {{ total.total }}
+                {% endif %}
+                {% endfor %}
+              </b>
+            </th>
+            <th class="text-center align-middle" style="width: 25%;">
+              Autorizar
+              <div class="text-center">
+                <div class="form-check form-check-inline mx-1">
+                  <input class="form-check-input item-autorizacion-radio" data-autorizar="true"
+                    data-item_id="{{ item.id }}" name="item_radio_{{item.id}}" type="radio"
+                    id="{{item.id}}_inlineCheckbox1" {% for item_autorizado in items_autorizados %}
+                    {% if item.id == item_autorizado.item.id and item_autorizado.autorizacion %} checked disabled
+                    {% endif %} {% endfor %} value="true">
+                  <label class="form-check-label" for="{{item.id}}_inlineCheckbox1">Si</label>
+                </div>
+                <div class="form-check form-check-inline mx-1">
+                  <input class="form-check-input item-autorizacion-radio" data-autorizar="false"
+                    data-item_id="{{ item.id }}" name="item_radio_{{item.id}}" type="radio"
+                    id="{{item.id}}_inlineCheckbox2" {% for item_autorizado in items_autorizados %}
+                    {% if item.id == item_autorizado.item.id and not item_autorizado.autorizacion %} checked {% endif %}
+                    {% endfor %} value="false">
+                  <label class="form-check-label" for="{{item.id}}_inlineCheckbox2">No</label>
+                </div>
+              </div>
+            </th>
+          </tr>
+          <tr>
+            <th class="text-center" scope="col">Descripción</th>
+            <th class="text-center" scope="col">Cantidad</th>
+            <th class="text-center" scope="col">Precio Unitario</th>
+            <th class="text-center" scope="col">Subtotal</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for refaccion in refacciones %}
+          {% if refaccion.item == item %}
+          <tr class="refaccion">
+            <td class="text-center" style="max-width: 130px">
+              <span class="badge badge-pill badge-primary">Repuesto</span>
+              {{refaccion.nombre}}
+            </td>
+            <td class="text-center">{{refaccion.cantidad}}</td>
+            <td class="text-center precio_unitario_iva">{{ refaccion.precio_unitario }}</td>
+            <td class="text-center"><b>$</b><b class="total">{{ refaccion.subtotal_iva }}</b></td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+
+          {% for mo in mano_de_obra %}
+          {% if mo.item == item %}
+          <tr class="mano_de_obra">
+            <td class="text-center" style="max-width: 130px">
+              <span class="badge badge-pill badge-info">Mano de Obra</span>
+              {{mo.nombre}}
+            </td>
+            <td class="text-center">{{mo.uts}}</td>
+            <td class="text-center precio_unitario_iva">{{ mo.precio_unitario }}</td>
+            <td class="text-center"><b>$</b><b class="total">{{ mo.subtotal_iva }}</b></td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="text-center mt-3">
+      <button type="button" class="btn btn-success shadow" onclick="guardar()">
+        <i class="fas fa-check"></i>
+        Confirmar
+      </button>
+      {% if items_sin_pagar %}
+
+      {% if mercadopago %}
+      <script src="https://www.mercadopago.com.ar/integrations/v1/web-payment-checkout.js"
+        data-preference-id={{mercadopago_id}}>
+        </script>
+      {% endif %}
+
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+{% for item in items_tecnico %}
+<div id="HelpModal{{ item.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="text-right">
+        <button type="button" class="btn btn-light mr-2 mt-2" data-dismiss="modal" aria-label="Cerrar">
+          <i class="fas fa-times fa-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h5>{{ item.item.familia.descripcion }}</h5>
+
+        <p>{{ item.item.familia.descripcion_adicional }}</p>
+
+        {% if item.item.familia.video %}
+        <div class="text-center my-4">
+          <video width="80%" controls>
+            <source src="{% get_media_prefix %}{{ item.item.familia.video }}" type="video/mp4">
+          </video>
+        </div>
+        {% endif %}
+
+        {% if item.item.familia.imagen %}
+        <div class="text-center my-4">
+          <img src="{% get_media_prefix %}{{ item.item.familia.imagen }}" class="img-fluid"
+            alt="{{ item.item.familia.nombre }}">
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Guardado de cotización -->
+<script>
+  function guardar() {
+    let total = 0;
+    let items = document.getElementsByClassName("item");
+
+    for (let e = 0; e < items.length; e++) {
+      if (items[e].getElementsByTagName("input")[0].checked == true) {
+        total = total + parseFloat(items[e].getElementsByClassName("total_item")[0].innerText);
+      }
+    }
+
+    Swal.fire({
+      title: `¿Desea confirmar su cotización por el monto total de: $ ${total.toFixed(2)}?`,
+      showCancelButton: true,
+      cancelButtonText: "Cancelar",
+      confirmButtonText: "Confirmar",
+      reverseButtons: true,
+      buttonsStyling: false,
+      focusConfirm: false,
+      focusCancel: false,
+      customClass: {
+        popup: "card bg-light rounded",
+        confirmButton: "btn btn-success mx-3 shadow rounded",
+        closeButton: "btn btn-light mx-3 shadow rounded",
+        denyButton: "btn btn-light mx-3 shadow rounded",
+        cancelButton: "btn btn-light mx-3 shadow rounded",
+      }
+    }).then(result => {
+      if (result.value == true) {
+        let data = {};
+        let items_revisados = [];
+
+        let items_checks = $(".item-autorizacion-radio:checked").each(function (index, element) {
+          let item_revisado = { "item_id": $(element).data("item_id") }
+          if ($(element).data("autorizar") == true) {
+            item_revisado.autorizacion = true;
+          } else if ($(element).data("autorizar") == false) {
+            item_revisado.autorizacion = false;
+          }
+          items_revisados.push(item_revisado)
+        })
+
+        data.items_revisados = JSON.stringify(items_revisados)
+
+        $.ajax({
+          type: "post",
+          data: data,
+          cache: false,
+          headers: { "X-CSRFToken": Cookies.get("csrftoken") },
+          success: function () {
+            Swal.fire({
+              title: "Preferencias guardadas",
+              confirmButtonText: "Cerrar",
+              buttonsStyling: false,
+              customClass: {
+                popup: "card bg-light rounded",
+                confirmButton: "btn btn-light mx-3 shadow rounded",
+              },
+              didClose: function () {
+                location.reload();
+              }
+            })
+          },
+        });
+      }
+    })
+  }
+</script>
+
+<!-- Evidencias por item -->
+<script>
+  // ITEMS COMUNES
+  {% for item in items_tecnico %}
+  $('#evidencias_{{item.id}}').on('click', function () {
+    $(this).lightGallery({
+      share: false,
+      dynamic: true,
+      dynamicEl: [
+        {% for ev in filas_video %}
+        {% if ev.item == item %}
+        {
+      'html': '<video class="lg-video-object lg-html5" controls preload="none"><source src="{% get_media_prefix %}{{ev.evidencia}}"></video>',
+      'thumb': '{% get_media_prefix %}{{ev.evidencia}}',
+      'subHtml': '<h4>{{ev.item.item.descripcion}}</h4>'
+    },
+    {% endif %}
+    {% endfor %}
+    {% for ev in filas_media %}
+  {% if ev.item == item %}
+  {
+    "src": '{% get_media_prefix %}{{ev.evidencia}}',
+      'thumb': '{% get_media_prefix %}{{ev.evidencia}}',
+        'subHtml': '<h4>{{ev.item.item.descripcion}}</h4>'
+  },
+  {% endif %}
+  {% endfor %}
+      ]
+    })
+  });
+  {% endfor %}
+</script>
+{% endblock %}

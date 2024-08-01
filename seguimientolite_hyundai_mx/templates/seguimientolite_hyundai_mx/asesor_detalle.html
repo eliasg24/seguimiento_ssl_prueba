@@ -1,0 +1,903 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+
+{% block content %}
+
+{% load l10n %}
+{% load humanize %}
+{% load static %}
+{% load mathfilters %}
+
+<style>
+  .custom-control-label::before,
+  .custom-control-label::after {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+
+  .custom-control-input:checked~.custom-control-label::before {
+    background-color: #007bff !important;
+  }
+
+</style>
+
+<div class="container-fluid mx-auto">
+  <!--Tarjeta de informacion-->
+  <div class="card bg-white my-4 shadow">
+    <h5 class="card-header">
+      <a href="{% url 'ordenes' %}" type="button" class="btn btn-light shadow-sm my-auto mr-3">
+        <i class="fas fa-chevroNOME Builder, the goal is to distribute it through Flatpakn-left fa-lg"></i>
+        Atrás
+      </a>
+      Informacion de la Orden
+    </h5>
+
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md">
+          <h5>Orden de Servicio: {{orden.no_orden}}</h5>
+          <h6>VIN: {{orden.vin}}</h6>
+          <h6>Placa: {{orden.placas}}</h6>
+          <h6>Cliente: {{orden.cliente}}</h6>
+          <h6>Vehículo: {{orden.vehiculo}}</h6>
+          <h6>Asesor: {{orden.asesor}}</h6>
+          {% for tecnico in tecnicos %} {% if tecnico.id_empleado == orden.tecnico %}
+          <h6>Tecnico: {{tecnico.nombre_empleado|lower|title}}</h6>
+          {% endif %} {% endfor %}
+          <h6>Fecha de Elaboración técnica: {{fin_tecnico}}</h6>
+          <div class="text-sm-center text-lg-left">
+            <button class="btn btn-primary my-3 shadow galeria_evidencias">
+              <i class="fas fa-photo-video fa-lg"></i>
+              Registro fotográfico
+            </button>
+          </div>
+        </div>
+        <div class="col-md-3 mx-auto text-center">
+          <button class="btn btn-outline-primary shadow-sm btn-block my-4" onclick="modal()" data-toggle="modal"
+            data-target="#firma" style="display: none;">
+            <i class="fas fa-signature fa-lg"></i>
+            Firma
+          </button>
+
+          <a class="btn btn-primary shadow-sm btn-block my-4" href="{% url 'pdf_multipuntos' orden.no_orden %}">
+            <i class="fas fa-file-pdf fa-lg"></i>
+            Hoja Multipuntos
+          </a>
+
+          <button class="btn btn-primary shadow-sm btn-block my-4" onclick="modal()" data-toggle="modal"
+            data-target="#pdf">
+            <i class="fas fa-file-pdf fa-lg"></i>
+            Generación de Cotizaciones PDF
+          </button>
+
+          <h6 class="mt-4"><strong>Envío de cotizacion</strong></h6>
+          {% if refacciones and mano_de_obra %}
+          <div class="btn-group text-center" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-info shadow e-mail">
+              <i class="fas fa-envelope fa-lg"></i>
+              Correo
+            </button>
+            <button type="button" class="btn btn-success shadow" data-toggle="modal" data-target="#mensaje_whatsapp">
+              <i class="fab fa-whatsapp fa-lg"></i>
+              WhatsApp
+            </button>
+          </div>
+          {% else %}
+          <h6><i class="fas fa-info-circle fa-lg"></i> Las opciones de envío estarán disponibles cuando exista al menos
+            un repuesto con mano de obra.</h6>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--Resumen general-->
+  {% if refacciones and mano_de_obra %}
+  <div class="card mx-auto my-4 shadow">
+    <h5 class="card-header">Resumen General</h5>
+    <div class="card-body">
+      <div class="jumbotron mx-auto">
+        <div class="row">
+          <div class="col-sm-5 my-3 text-lg-center text-sm-left">
+            <div class="my-auto">
+              <h5 class="mb-3">Total Cotizado: ${{ total_cotizado }}</h5>
+              <h5>Total repuestos: ${{ total_refacciones }}</h5>
+              <h5>Total mano de obra: ${{ total_mano_de_obra }}</h5>
+            </div>
+          </div>
+          <div class="col-sm my-3">
+            <div class="my-auto">
+              <h5>Total Autorizado: ${{ total_autorizado }}</h5>
+              <h6>Total repuestos autorizados: ${{ total_refacciones_autorizadas }}</h6>
+              <h6>Total mano de obra autorizada: ${{ total_mano_de_obra_autorizada }}</h6>
+
+              <h5 class="mt-4">Total No Autorizado: ${{ total_no_autorizado }}</h5>
+              <h6>Total de repuestos no autorizados: ${{ total_refacciones_no_autorizadas }}</h6>
+              <h6>Total mano de obra no autorizada: ${{ total_mano_de_obra_no_autorizada }}</h6>
+            </div>
+          </div>
+          <div class="col-sm my-3">
+            <div class="my-auto">
+              <h5>Items Autorizados</h5>
+              <ul>
+                {% for item_autorizado in items_autorizados %}
+                <li>{{item_autorizado.item.item.descripcion}}</li>
+                {% endfor %}
+              </ul>
+              <h5 class="mt-4">Items No Autorizados</h5>
+              <ul>
+                {% for item_no_autorizado in items_no_autorizados %}
+                <li>{{item_no_autorizado.item.descripcion}}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!--Autorizaciones del cliente-->
+  {% if cliente %}
+  <div class="accordion" id="accordion">
+    <div class="card mb-3 mx-auto shadow">
+      <div class="card-header" id="headingOne">
+        <h5>
+          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#body-table"
+            aria-expanded="true" aria-controls="body-table">
+            <i class="fas fa-chevron-down"></i>
+            Respuesta del Cliente
+          </button>
+          <span class="badge badge-primary ml-4 mb-3 mb-md-0">{{cantidad_cotizados}} Repuestos Autorizados</span>
+          <span class="d-inline-block badge badge-success ml-4 mb-3 mb-md-0">Monto Autorizado: ${{ total_autorizados }}
+          </span>
+          <span class="d-inline-block badge badge-danger ml-4 mb-3 mb-md-0">Monto No Autorizado:
+            ${{ total_no_autorizados }}</span>
+        </h5>
+      </div>
+      <div id="body-table" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+        <table class="table table-sm table-stripped table-hover table-bordered mx-auto table-responsive-md text-left">
+          <thead class="thead-dark">
+            <tr class="text-left">
+              <th>Ítem</th>
+              <th>Refaccion</th>
+              <th>Autorizacion</th>
+              <th>Hora de Autorizacion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in cliente %}
+            <tr class="text-left">
+              <td>
+                {% ifchanged %}
+                <p>{{fila.item}}</p>
+                {% endifchanged %}
+              </td>
+              <td>
+                <p>{{fila.refaccion}}</p>
+              </td>
+              <td>
+                <p>{{fila.autorizacion}}</p>
+              </td>
+              <td>
+                <p>{{fila.fecha_hora_autorizacion}}</p>
+              </td>
+              {% endfor %}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!--Tarjeta de inspeccion-->
+  <div class="card shadow my-4 mx-auto">
+    <h5 class="card-header">
+      Inspección
+    </h5>
+    {% if refacciones and mano_de_obra %}
+    {% for item in items_tecnico %}
+    <table class="item table table-sm table-stripped table-hover table-responsive-md border shadow-sm mb-5 mx-auto"
+      data-item_id="{{item.id}}">
+
+      <!-- Header de item -->
+      <tr class="bg-light text-dark">
+        <td class="text-left" colspan="4">
+
+          <h6>
+            <!--Estado del item-->
+            {% if item.estado == 'Inmediato' %}
+            <span class="badge badge-pill badge-danger text-light ml-0">Inmediato</span>
+            {% endif %}
+            {% if item.estado == 'Recomendado' %}
+            <span class="badge badge-pill badge-warning text-light ml-0">Recomendado</span>
+            {% endif %}
+            {% if item.estado == 'Corregido' %}
+            <span class="badge badge-pill badge-primary ml-0">Corregido</span>
+            {% endif %}
+            <!--Nombre del item-->
+            <strong>{{item.item.familia.nombre}} - {{item.item.descripcion}}</strong>
+          </h6>
+
+        </td>
+        <td class="text-left" colspan="4">
+          <!--Comentarios del item-->
+          <p>{{item.comentarios}}</p>
+        </td>
+      </tr>
+
+      <tr class="bg-light text-dark">
+        <td class="text-center" colspan="9"><strong>Repuestos</strong></td>
+      </tr>
+
+      <tr class="bg-light text-dark">
+        <td class="text-center"><strong>No. Parte</strong></td>
+        <td class="text-center"><strong>Nombre</strong></td>
+        <td class="text-center"><strong>Cantidad</strong></td>
+        <td class="text-center"><strong>Precio</strong></td>
+        <td class="text-center"><strong>Descuento</strong></td>
+        <td class="text-center"><strong>Subtotal</strong></td>
+        <td class="text-center"><strong>Existencia</strong></td>
+        <td class="text-center"><strong>Ubicación</strong></td>
+      </tr>
+
+      <!--
+        Seccion de refacciones, copiar y pegar el caso cuando
+        hay una inspeccion ya guardada, retirar botones, poner 
+        todos los inputs como disabled
+      -->
+      {% if refacciones %}
+      {% for refaccion in refacciones %}
+      {% if refaccion.item.id == item.id %}
+      <tr class="refaccion text-center" data-refaccion_id="{{refaccion.id}}">
+        <td class="text-center" style="width: 12%;"><input class="refaccion-no-parte form-control" type="text"
+            value="{{refaccion.no_parte}}" disabled
+            onkeyup="this.value = this.value.toUpperCase().replace(/[^a-zA-Z0-9-ñÑ]/g, '');"></input></td>
+        <td class="text-center"><input class="refaccion-nombre form-control" type="text" value="{{refaccion.nombre}}"
+            disabled></input></td>
+        <td class="text-center" style="width: 7%;"><input class="refaccion-cantidad form-control" type="number"
+            value="{{refaccion.cantidad}}" min="0" disabled></input></td>
+        <td class="text-center" style="width: 9%;"><input class="refaccion-precio form-control" type="number"
+            value="{{refaccion.precio_unitario}}" min="0" disabled></input></td>
+        <td class="text-center" style="width: 7%;"><input class="refaccion-descuento form-control" type="number"
+            value="{{refaccion.porcentaje_descuento}}" min="0" disabled></input></td>
+        <td class="text-center" style="width: 9%;"><input class="refaccion-subtotal form-control" type="number"
+            value="{{refaccion.subtotal_iva}}" min="0" disabled></input></td>
+        <td class="text-center">
+          <select class="refaccion-existencia form-control" disabled>
+            <option value="{{refaccion.existencia}}" selected>{{refaccion.existencia}}</option>
+            <option value="Si">Si</option>
+            <option value="No">No</option>
+          </select>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-localizacion form-control" disabled>
+            <option value="{{refaccion.localizacion}}" selected>{{refaccion.localizacion}}</option>
+            <option value="Provincia">Provincia</option>
+            <option value="Importación">Importación</option>
+            <option value="B Central">B Central</option>
+            <option value="Almacén">Almacén</option>
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+
+      <!--Mano de obra-->
+      <tr class="bg-light text-dark">
+        <td class="text-center" colspan="8"><strong>Mano de obra</strong></td>
+      </tr>
+      <tr class="bg-light text-dark">
+        <td class="text-center"><strong>Código MO</strong></td>
+        <td class="text-center" colspan="2"><strong>Nombre</strong></td>
+        <td class="text-center"><strong>UTS</strong></td>
+        <td class="text-center"><strong>Descuento</strong></td>
+        <td class="text-center"><strong>Subtotal</strong></td>
+        <td class="text-center" colspan="2"><strong>Cargo</strong></td>
+      </tr>
+
+      {% if mano_de_obra %}
+      {% for mo in mano_de_obra %}
+      {% if mo.item.id == item.id %}
+      <tr class="mano-de-obra text-center" data-mano_de_obra_id="{{mo.id}}">
+        <td class="text-center">
+          <div class="mb-3">
+            <input class="mano-de-obra-codigo form-control" type="text" value="{{mo.codigo}}" disabled>
+          </div>
+        </td>
+        <td class="text-center" colspan="2"><input class="mano-de-obra-nombre form-control" type="text"
+            value="{{mo.nombre}}" disabled></input></td>
+        <td class="text-center"><input class="mano-de-obra-uts form-control" type="number" min="0"
+            value="{{mo.cantidad_uts}}" disabled></input></td>
+        <td class="text-center"><input class="mano-de-obra-descuento form-control" type="number" min="0"
+            value="{{mo.porcentaje_descuento}}" disabled></input></td>
+        <td class="text-center"><input class="mano-de-obra-subtotal form-control" type="number" min="0"
+            value="{{mo.subtotal_iva}}" disabled></input></td>
+        <td class="text-center" colspan="2">
+          <select class="mano-de-obra-cargo form-control" disabled>
+            <option value="{{mo.cargo.id}}" selected>{{mo.cargo.descripcion}}</option>
+            {% for cargo in cargos %}
+            <option value="{{cargo.id}}">{{cargo.descripcion}}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+
+    </table>
+    {% endfor %}
+    {% else %}
+    <div class="card-body text-center">
+      <div>
+        <strong>Inspección incompleta</strong>
+      </div>
+      {% if not refacciones %}
+      <div>No hay cotización de repuestos</div>
+      {% endif %}
+      {% if not mano_de_obra %}
+      <div>No hay cotización de mano de obra</div>
+      {% endif %}
+
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!--Modal firma-->
+<div class="modal fade" id="firma" tabindex="-1" role="dialog" aria-labelledby="evidencia" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Firma del Cliente</h5>
+      </div>
+      <div class="modal-body">
+        <div class="card text-white bg-dark mx-auto">
+          <div class="card-body text-center">
+            <div>
+              <canvas class="bg-white shadow my-4 signaturepad-sign"></canvas>
+            </div>
+            <div>
+              <button type="button" class="btn btn-dark shadow signaturepad-clear">
+                <i class="fas fa-undo fa-lg"></i>
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light mx-4 shadow" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success shadow signaturepad-save">
+          <i class="far fa-save fa-lg"></i>
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--Modal PDFs-->
+<div class="modal fade" id="pdf" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Generación de PDFs</h5>
+      </div>
+      <div class="modal-body container">
+
+        <!--Header-->
+        <div class="form-inline container">
+          <div class="custom-control custom-checkbox mx-3">
+            <input type="checkbox" class="custom-control-input" id="select_all">
+            <label class="custom-control-label" for="select_all">Seleccionar todo</label>
+          </div>
+          <div class="custom-control custom-checkbox mx-3">
+            <input type="checkbox" class="custom-control-input" id="select_ref_all">
+            <label class="custom-control-label" for="select_ref_all">Seleccionar todos los repuestos</label>
+          </div>
+          <div class="custom-control custom-checkbox mx-3">
+            <input type="checkbox" class="custom-control-input" id="select_mo_all">
+            <label class="custom-control-label" for="select_mo_all">Seleccionar toda la mano de obra</label>
+          </div>
+        </div>
+
+        <div class="my-3 text-center">
+          <button id="cotizacion_simplificada" type="button" class="btn btn-link text-decoration-none">
+            Descargar PDF simplificado
+          </button>
+        </div>
+
+        <!--Items-->
+        <div class="my-3">
+          {% for item in items_tecnico %}
+          <div class="card shadow my-4">
+            <div class="card-body">
+              <h6>{{item.item.descripcion}}</h6>
+            </div>
+            <table class="table table-sm table-hover">
+
+              <!--Refacciones-->
+              <thead class="bg-light">
+                <tr>
+                  <th class="text-left" scope="col">Repuestos</th>
+                  <th colspan="2" class="text-right">
+                    <div class="custom-control custom-checkbox mx-2">
+                      <input type="checkbox" class="custom-control-input select_ref_all_item"
+                        id="select_ref_{{item.id}}">
+                      <label class="custom-control-label" for="select_ref_{{item.id}}">Seleccionar repuestos del
+                        item</label>
+                    </div>
+                  </th>
+                </tr>
+                <tr class="text-center">
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Subtotal</th>
+                  <th scope="col">Incluir</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for refaccion in refacciones %}
+                {% if refaccion.item.id == item.id %}
+                <tr class="text-center">
+                  <td>{{refaccion.nombre}}</td>
+                  <td>{{ refaccion.subtotal_iva }}</td>
+                  <td>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input pdf-check refaccion-check"
+                        id="check_ref_{{refaccion.id}}" data-ref_id="{{refaccion.id}}">
+                      <label class="custom-control-label" for="check_ref_{{refaccion.id}}"></label>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+
+              <!--Mano de obra-->
+              <thead class="bg-light">
+                <tr>
+                  <th class="text-left" scope="col">Mano de obra</th>
+                  <th colspan="2" class="text-right">
+                    <div class="custom-control custom-checkbox mx-2">
+                      <input type="checkbox" class="custom-control-input select_mo_all_item" id="select_mo_{{item.id}}">
+                      <label class="custom-control-label" for="select_mo_{{item.id}}">Seleccionar mano de obra del
+                        item</label>
+                    </div>
+                  </th>
+                </tr>
+                <tr class="text-center">
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Subtotal</th>
+                  <th scope="col">Incluir</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for mo in mano_de_obra %}
+                {% if mo.item.id == item.id %}
+                <tr class="text-center">
+                  <td>{{mo.nombre}}</td>
+                  <td>{{ mo.subtotal_iva }}</td>
+                  <td>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input pdf-check mo-check" id="check_mo_{{mo.id}}"
+                        data-mo_id="{{mo.id}}">
+                      <label class="custom-control-label" for="check_mo_{{mo.id}}"></label>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+
+            </table>
+          </div>
+          {% endfor %}
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light mx-3 shadow" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-mint shadow descargar-cotizacion-pdf">
+          <i class="far fa-file-pdf fa-lg"></i>
+          Descargar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--WhatsApp-->
+<div class="modal fade" id="mensaje_whatsapp" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Mensaje de WhatsApp</h5>
+      </div>
+      <div class="modal-body">
+        <div class="container mb-4">
+          <h6>Telefono de Cliente:</h6>
+          <div class="row">
+            <div class="col">
+              <select class="form-control" id="cliente_prefijo">
+                <option value="52">🇲🇽 México (+52)</option>
+                <option value="57">🇨🇴 Colombia (+57)</option>
+                <option value="593">🇪🇨 Ecuador (+593)</option>
+                <option value="51">🇵🇪 Perú (+51)</option>
+                <option value="54">🇦🇷 Argentina (+54)</option>
+                <option value="33">🇫🇷 Francia (+33)</option>
+                <option value="1">🇺🇸 Estados Unidos (+1)</option>
+                <option value="55">🇧🇷 Brasil (+55)</option>
+                <option value="506">🇨🇷 Costa Rica (+506)</option>
+                <option value="507">🇵🇦 Panamá (+507)</option>
+              </select>
+            </div>
+            <div class="col-7">
+              <input class="form-control" type="tel" id="cliente_tel" placeholder="Ingrese el numero telefonico" />
+            </div>
+          </div>
+        </div>
+        <div class="card-deck">
+          <div class="card text-center shadow">
+            <div class="card-body">
+              <h5 class="card-title">Mensaje Automatico</h5>
+              <p class="card-text">Se le recordará al cliente que tiene una cotización pendiente.</p>
+            </div>
+            <div class="card-footer">
+              {% if settings.COREAPI_MENSAJES %}
+              <button type="button" onclick="mensaje(true);" class="btn btn-success whatsapp shadow">
+                <i class="fab fa-whatsapp fa-lg"></i>
+                Enviar
+              </button>
+              {% else %}
+              <button id="whatsapp_automatico_web" type="button" class="btn btn-success shadow">
+                <i class="fab fa-whatsapp fa-lg"></i>
+                Abrir WhatsApp Web
+              </button>
+              {% endif %}
+            </div>
+          </div>
+          <div class="card text-center shadow">
+            <div class="card-body">
+              <h5 class="card-title">Mensaje Personalizado</h5>
+              <p class="card-text">Se enviará un mensaje de whatsapp con el texto que desee.</p>
+              <textarea class="form-control" id="wa_mensaje" rows="3" placeholder="Mensaje Personalizado"></textarea>
+            </div>
+            <div class="card-footer">
+              {% if settings.COREAPI_MENSAJES %}
+              <button type="button" onclick="mensaje(false);" class="btn btn-success shadow">
+                <i class="fab fa-whatsapp fa-lg"></i>
+                Enviar
+              </button>
+              {% else %}
+              <button id="whatsapp_manual_web" type="button" class="btn btn-success shadow">
+                <i class="fab fa-whatsapp fa-lg"></i>
+                Abrir WhatsApp Web
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--Envío por WhatsApp y correo electrónico-->
+<script>
+  function mensaje(automatico) {
+    let agencia = "{{nombre_agencia}}";
+    let orden = "{{ orden.no_orden }}";
+    let direccion_publica = "{{link}}";
+
+    let data = {};
+    data.metodo = "WhatsApp";
+    data.telefono = $("#cliente_tel").val();
+    data.prefijo = $("#cliente_prefijo").val();
+
+    if (data.telefono) {
+      if (automatico) {
+        data.mensaje = "Notificaciones Mazda Pruebas\nEstimado cliente, necesitamos de su atención para revisar la cotización de su vehículo disponible en el siguiente enlace: \n" + direccion_publica;
+      } else {
+        data.mensaje = $("#wa_mensaje").val();
+      }
+
+      if (data.mensaje) {
+        $.ajax({
+          type: "post",
+          data: data,
+          cache: false,
+          headers: {
+            "X-CSRFToken": Cookies.get("csrftoken"),
+          },
+          success: function () {
+            alert("Mensaje enviado");
+          },
+          error: function () {
+            alert("Ha ocurrido un error");
+          },
+        });
+      } else {
+        alert("Escriba un mensaje");
+      }
+    } else {
+      alert("Introduzca un numero celular valido");
+    }
+  }
+
+  $(".e-mail").click(function () {
+    let correo = "";
+    let mail = prompt("Por favor introduzca una direccion de correo electronico", correo);
+
+    if (mail == null || mail == "") {
+    } else {
+      let data = {};
+
+      data.metodo = "E-Mail";
+      data.mail = mail;
+
+      $.ajax({
+        type: "post",
+        data: data,
+        cache: false,
+        headers: {
+          "X-CSRFToken": Cookies.get("csrftoken"),
+        },
+        success: alert("Correo Enviado"),
+      });
+    }
+  });
+</script>
+
+<!--Signature Pad-->
+<script>
+  $(function () {
+    var canvas = document.querySelector("canvas");
+    var signaturePad = new SignaturePad(canvas);
+
+    $(".signaturepad-clear").click(function () {
+      signaturePad.clear();
+    });
+
+    $(".signaturepad-save").click(function () {
+      var sig = signaturePad.toDataURL();
+      let data = {};
+      data.firma = sig;
+      $.ajax({
+        type: "post",
+        data: data,
+        cache: false,
+        headers: {
+          "X-CSRFToken": Cookies.get("csrftoken"),
+        },
+        success: function () {
+          alert("Firma Enviada Exitosamente");
+          $("#firma").modal("toggle");
+        },
+        error: function () {
+          alert("Ha Ocurrido Un Error");
+        },
+      });
+    });
+  });
+
+  function modal() {
+    $("#firma").modal("handleUpdate");
+  }
+</script>
+
+<!--Cotizaciones en PDF-->
+<!--Filtros-->
+<script>
+  // Filtros globales
+  $("#select_all").click(function () {
+    if ($(this).is(":checked")) {
+      $(".pdf-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', true);
+      })
+    } else {
+      $(".pdf-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', false);
+      })
+    }
+  })
+
+  $("#select_ref_all").click(function () {
+    if ($(this).is(":checked")) {
+      $(".refaccion-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', true);
+      })
+    } else {
+      $(".refaccion-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', false);
+      })
+    }
+  })
+
+  $("#select_mo_all").click(function () {
+    if ($(this).is(":checked")) {
+      $(".mo-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', true);
+      })
+    } else {
+      $(".mo-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', false);
+      })
+    }
+  })
+
+  // Filtros por item
+  $(".select_ref_all_item").click(function () {
+    let check = this
+    let table = $(this).parents("table")
+    if ($(check).is(":checked")) {
+      $(table).find(".refaccion-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', true);
+      })
+    } else {
+      $(table).find(".refaccion-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', false);
+      })
+    }
+  })
+
+  $(".select_mo_all_item").click(function () {
+    let check = this
+    let table = $(this).parents("table")
+    if ($(check).is(":checked")) {
+      $(table).find(".mo-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', true);
+      })
+    } else {
+      $(table).find(".mo-check").each(function (index, checkbox) {
+        $(checkbox).prop('checked', false);
+      })
+    }
+  })
+</script>
+
+<!--Generación de PDF-->
+<script>
+  function downloadBlob(blob, name = 'file.txt') {
+    // Convert your blob into a Blob URL (a special url that points to an object in the browser's memory)
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Create a link element
+    const link = document.createElement("a");
+
+    // Set link's href to point to the Blob URL
+    link.href = blobUrl;
+    link.download = name;
+
+    // Append link to the body
+    document.body.appendChild(link);
+
+    // Dispatch click event on the link
+    // This is necessary as link.click() does not work on the latest firefox
+    link.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      })
+    );
+
+    // Remove link from body
+    document.body.removeChild(link);
+  }
+  $(".descargar-cotizacion-pdf").click(function () {
+    let data = {};
+    let ids_ref = [];
+    let ids_mo = [];
+
+    $(".pdf-check").each(function (index, check) {
+      if ($(check).is(":checked")) {
+        if ($(check).data("ref_id")) {
+          ids_ref.push($(check).data("ref_id"))
+        }
+
+        if ($(check).data("mo_id")) {
+          ids_mo.push($(check).data("mo_id"))
+        }
+      }
+    })
+
+    data.cotizacion_pdf = true;
+    data.ids_mo = JSON.stringify(ids_mo);
+    data.ids_ref = JSON.stringify(ids_ref);
+    let no_orden = "{{ orden.no_orden }}";
+
+    console.log(data);
+    $.ajax({
+      type: "post", // "post" "get" "delete" "put"
+      data: data, // PREFERIBLEMENTE JSON
+      cache: false,
+      headers: {
+        "X-CSRFToken": Cookies.get('csrftoken')
+      },
+      xhrFields: {
+        responseType: 'blob' // to avoid binary data being mangled on charset conversion
+      },
+      success: function (response) {
+        let pdf = new Blob([response], { type: "application/octetstream" });
+        downloadBlob(pdf, `cotizacion_${no_orden}.pdf`);
+        console.log(url)
+      }
+    });
+
+  })
+
+  // Descargar PDF simplificado
+  $("#cotizacion_simplificada").click(function () {
+    let no_orden = "{{ orden.no_orden }}";
+    let data = {};
+    data.cotizacion_pdf_simplificado = true;
+
+    $.ajax({
+      type: "post",
+      data: data,
+      cache: false,
+      headers: {
+        "X-CSRFToken": Cookies.get('csrftoken')
+      },
+      xhrFields: {
+        responseType: 'blob' // to avoid binary data being mangled on charset conversion
+      },
+      success: function (response) {
+        let pdf = new Blob([response], { type: "application/octetstream" });
+        downloadBlob(pdf, `cotizacion_${no_orden}.pdf`);
+        console.log(url)
+      }
+    });
+  })
+</script>
+
+<!--Whatsapp manual-->
+<script>
+  function log_whatsapp_web(telefono) {
+    $.ajax({
+      type: "post",
+      data: {
+        "log_whatsapp_web": true,
+        "telefono": telefono
+      },
+      cache: false,
+      headers: {
+        "X-CSRFToken": Cookies.get("csrftoken"),
+      }
+    });
+  }
+
+  function abrir_whatsapp_web(mensaje, telefono, prefijo) {
+    let whatsapp_url = ("https://api.whatsapp.com://send?phone=" + prefijo + telefono + "&text=" + mensaje);
+    window.open(whatsapp_url, '_blank');
+  }
+
+  $("#whatsapp_automatico_web").click(function () {
+    let link = "{{ settings.DOMINIO }}/{{ settings.PREFIJO }}/seguimiento/cotizacion/{{ encrypted_no_orden }}";
+    let agencia = "{{ settings.AGENCIA }}";
+
+    let telefono = $("#cliente_tel").val();
+    let prefijo = $("#cliente_prefijo").val();
+    let mensaje = (agencia + " Estimado cliente, necesitamos de su atención para revisar la cotización. Ingresa al enlace desde aquí: " + link);
+
+    log_whatsapp_web(telefono)
+    abrir_whatsapp_web(mensaje, telefono, prefijo);
+  });
+
+  $("#whatsapp_manual_web").click(function () {
+    let telefono = $("#cliente_tel").val();
+    let prefijo = $("#cliente_prefijo").val();
+    let mensaje = $("#wa_mensaje").val();
+
+    log_whatsapp_web(telefono)
+    abrir_whatsapp_web(mensaje, telefono, prefijo);
+  });
+</script>
+{% endblock %}

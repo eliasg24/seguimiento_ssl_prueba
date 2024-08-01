@@ -1,0 +1,362 @@
+textarea {
+  resize: none; }
+
+.card {
+  border-radius: 10px; }
+  .card-blueberry {
+    background-color: #3689e6 !important; }
+    .card-blueberry-grape {
+      background-color: #a56de2 !important; }
+    .card-blueberry-bubblegum {
+      background-color: #de3e80 !important; }
+
+.card-header {
+  border-radius: 10px; }
+
+.btn {
+  border-radius: 10px; }
+  .btn-blueberry {
+    background-color: #3689e6 !important;
+    border-color: #0d52bf !important;
+    color: white; }
+    .btn-blueberry:hover {
+      background-color: #0d52bf !important;
+      color: white; }
+  .btn-grape {
+    background-color: #a56de2 !important;
+    border-color: #7239b3 !important;
+    color: white; }
+    .btn-grape:hover {
+      background-color: #7239b3 !important;
+      border-color: #7239b3 !important;
+      color: white; }
+  .btn-bubblegum {
+    background-color: #de3e80 !important;
+    border-color: #bc245d !important;
+    color: white; }
+    .btn-bubblegum:hover {
+      background-color: #bc245d !important;
+      border-color: #bc245d !important;
+      color: white; }
+  .btn-mint {
+    background-color: #28bca3 !important;
+    border-color: #0e9a83 !important;
+    color: white; }
+    .btn-mint:hover {
+      background-color: #0e9a83 !important;
+      border-color: #0e9a83 !important;
+      color: white; }
+  .btn-ui {
+    background-color: transparent;
+    color: black; }
+    .btn-ui:hover {
+      background-color: #f7f7f7; }
+
+.btn-file {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1; }
+  .btn-file + label {
+    cursor: pointer; }
+
+.text-blueberry {
+  color: #3689e6 !important; }
+
+.text-bubblegum {
+  color: #de3e80 !important; }
+
+.text-grape {
+  color: #a56de2 !important; }
+
+.text-mint {
+  color: #28bca3 !important; }
+
+.bg-blueberry {
+  background-color: #3689e6 !important; }
+
+.bg-bubblegum {
+  background-color: #de3e80 !important; }
+
+.bg-grape {
+  background-color: #a56de2 !important; }
+
+.bg-mint {
+  background-color: #28bca3 !important; }
+
+.bi {
+  height: 1em;
+  text-align: inherit; }
+
+.rounded {
+  border-radius: 10px !important; }
+
+.modal {
+  border-radius: 10px; }
+
+.modal-content {
+  border-radius: 10px; }
+
+.sticky-offset {
+  top: 69px; }
+
+.signature {
+  background-color: white !important;
+  border-radius: 10px !important; }
+
+img.logo-navbar {
+  height: 2rem !important; }
+
+.inputfile {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1; }
+  .inputfile + label {
+    cursor: pointer; }
+
+.receiver-bubble {
+  background-color: #3689e6 !important; }
+
+.ui-widget-header {
+  background-color: white; }
+
+td.av-high > a {
+  background: #64baff !important;
+  color: white !important; }
+
+td.av-mid > a {
+  background: #ffe16b !important;
+  color: #000000 !important; }
+
+td.av-low > a {
+  background: #ed5353 !important;
+  color: white !important; }
+
+.ui-widget.ui-widget-content {
+  border-radius: 8px; }
+
+.ui-datepicker-calendar a.ui-state-default {
+  border-width: 3px;
+  border-radius: 10px;
+  border-color: white;
+  color: white;
+  background-color: #64baff; }
+
+.ui-datepicker-calendar a.ui-state-active {
+  border-color: #3689e6;
+  color: white; }
+
+.ui-datepicker {
+  left: 50% !important; }
+
+#datepicker-container {
+  text-align: center; }
+
+#datepicker-center {
+  display: inline-block;
+  margin: 0 auto; }
+
+.ui-widget-header {
+  border: hidden; }
+
+.ui-widget {
+  font-family: inherit; }
+
+.ui-datepicker td span,
+.ui-datepicker td a {
+  text-align: center;
+  border: hidden; }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0; }
+
+@media (prefers-color-scheme: dark) {
+  .dropdown-menu {
+    background-color: #313236 !important;
+  }
+  .dropdown-item.nav-link:hover{
+    background-color: #3689e6 !important;
+  }
+  body {
+    background-color: #202124 !important;
+    color: white !important; }
+  li.list-group-item {
+    background-color: #313236 !important; }
+  .list-group-item {
+    background-color: #313236 !important;
+    color: white !important; }
+    .list-group-item:hover {
+      background-color: #3b4043 !important;
+      color: white !important; }
+  .btn-outline-primary {
+    color: #3689e6 !important;
+    border-color: #3689e6 !important; }
+    .btn-outline-primary:hover {
+      color: white !important; }
+  .btn-light {
+    background-color: #313235 !important;
+    border-color: #202124 !important;
+    color: white !important; }
+    .btn-light:hover {
+      background-color: #202124 !important;
+      color: white !important; }
+  .btn-link {
+    color: #3689e6 !important; }
+  .message-received {
+    background-color: #36373a !important;
+    color: white !important; }
+  .text-primary {
+    color: #3689e6 !important; }
+  .navbar {
+    border-color: #202124 !important; }
+  .navbar-light {
+    background-color: #313235 !important;
+    color: white !important; }
+  .navbar-brand {
+    color: white !important; }
+  .neutron-navbar-dark {
+    background-color: #313235 !important;
+    color: white !important; }
+  .neutron-body-dark {
+    background-color: #202124 !important;
+    color: white; }
+  .table {
+    border-color: black !important;
+    color: white !important; }
+  .table td, .table th {
+    border-top: 1px solid #202124 !important; }
+  .thead-dark {
+    background-color: #313236 !important;
+    border-color: #313236 !important; }
+  tr {
+    border-color: #202124 !important; }
+    tr:hover {
+      color: white !important; }
+  .form-control {
+    background-color: #3b4043 !important;
+    color: white !important;
+    border-color: #313236 !important;
+    -webkit-appearance: none; }
+  .input-group-text {
+    background-color: #313235 !important;
+    border-color: #313235 !important; }
+  .paginate_button {
+    background-color: #313235 !important;
+    border-color: #313235 !important;
+    color: white; }
+    .paginate_button .disabled {
+      background-color: #313235 !important; }
+  .page-item {
+    background-color: #313235 !important;
+    border-color: #313235 !important;
+    color: white; }
+  .page-link {
+    background-color: #313235 !important;
+    border-color: #313235 !important;
+    color: #64baff !important; }
+  .filepond--drop-label {
+    background-color: #313235 !important;
+    color: white !important; }
+  .filepond--panel-center {
+    background-color: #313235 !important;
+    color: white !important; }
+  .filepond--panel-bottom {
+    background-color: #313235 !important;
+    color: white !important; }
+  .bg-dark {
+    background-color: #313235 !important; }
+  .bg-light {
+    background-color: #313235 !important;
+    color: white !important; }
+  .bg-white {
+    background-color: #202124 !important;
+    color: white !important; }
+  .nav-link {
+    color: white !important; }
+  .disabled {
+    color: #667885; }
+  .card {
+    background-color: #313236 !important;
+    color: white; }
+  .border {
+    border-color: #3b4043 !important;
+    border-width: 3px !important; }
+  .modal-footer {
+    background-color: #313236 !important;
+    border-color: #313236 !important; }
+  .modal-content {
+    background-color: #313236 !important;
+    border-radius: 10px !important;
+    border-color: #313236 !important; }
+  .jumbotron {
+    background-color: black !important;
+    border-color: black !important; }
+  .signaturepad-sign {
+    background-color: white !important; }
+  .ui-widget-content {
+    background-color: #3b4043 !important;
+    color: white !important;
+    border-color: black !important;
+    border-radius: 10px !important; }
+  .ui-state-disabled {
+    background-color: #3b4043 !important;
+    border-color: #3b4043 !important;
+    color: gray !important; }
+  .ui-datepicker-unselectable {
+    background-color: #3b4043 !important;
+    border-color: #3b4043 !important;
+    color: white !important; }
+  .ui-widget-header {
+    background-color: #3b4043 !important;
+    color: white; }
+  td.av-high > a {
+    background: #3689e6 !important;
+    color: white !important; }
+  td.av-mid > a {
+    background: #ffe16b !important;
+    color: #000000 !important; }
+  td.av-low > a {
+    background: #ed5353 !important;
+    color: white !important; }
+  .ui-widget.ui-widget-content {
+    border-radius: 8px; }
+  .ui-datepicker-calendar a.ui-state-default {
+    border-width: 3px;
+    border-radius: 10px;
+    border-color: #3b4043 !important;
+    color: white !important;
+    background-color: #3689e6 !important; }
+    .ui-datepicker-calendar a.ui-state-default span.ui-state-default {
+      border: 1px solid #3b4043 !important;
+      background: #3b4043 !important;
+      font-weight: normal;
+      color: white !important; }
+  .ui-datepicker-calendar a.ui-state-active {
+    border-color: #0d52bf !important;
+    color: white;
+    background-color: #0d52bf !important; }
+  .ui-datepicker {
+    left: 50% !important; }
+  #datepicker-container {
+    text-align: center; }
+  #datepicker-center {
+    display: inline-block;
+    margin: 0 auto; }
+  .ui-widget-header {
+    border: hidden; }
+  .ui-widget {
+    font-family: inherit; }
+  .ui-datepicker td span,
+  .ui-datepicker td a {
+    text-align: center;
+    border: hidden; } }
+
+body {
+  background-color: #f8f9fa; }

@@ -1,0 +1,16 @@
+django == 4.2
+djangorestframework
+django-drf-filepond
+django-excel-response
+django-webpush
+django-pwa
+reportlab
+requests
+pillow
+PyPDF2
+numpy
+pycryptodome
+
+black
+pylint
+pylint-django

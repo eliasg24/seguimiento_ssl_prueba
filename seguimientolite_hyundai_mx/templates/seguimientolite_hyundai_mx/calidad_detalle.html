@@ -1,0 +1,119 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+{% load static %}
+<div class="container mx-auto">
+  <div class="card mb-3 mx-auto">
+    <h5 class="card-header">
+      Informacion de la Orden
+      <a href="../" type="button" class="btn btn-light border border-dark float-right">
+        <i class="fas fa-chevron-left"></i>
+        Atrás
+      </a>
+    </h5>
+    <div class="card-body">
+      <h5>Orden de Servicio: {{orden.no_orden}}</h5>
+      <h6>Placa: {{orden.placas}}</h6>
+      <h6>VIN: {{orden.vin}}</h6>
+      <h6>Cliente: {{orden.cliente}}</h6>
+      <h6>Vehiculo: {{orden.vehiculo}}</h6>
+      <h6>Asesor: {{orden.asesor|lower|title}}</h6>
+      {% for tecnico in tecnicos %}
+      {% if tecnico.id_empleado == orden.tecnico %}      
+      <h6>Tecnico: {{tecnico.nombre_empleado|lower|title}}</h6>
+      {% endif %}
+      {% endfor %}
+      <h6>Fecha de Elaboración tecnica: {{fin_tecnico}}</h6>
+      <button type="button mx-auto" class="btn btn-outline-info" data-toggle="modal" data-target="#evidencia">
+        <i class="fas fa-images"></i>
+        Ver Evidencias
+      </button>
+    </div>
+  </div>
+
+  <div class="card mb-3 mx-auto">
+    <div class="card-body">
+      <h5>Registro de Control de Calidad</h5>
+      <h6>Prueba de Ruta:</h6>
+      <form class="mx-auto" method="post">
+        {% csrf_token %}
+        {% if items_revision %}
+        {% for item in items_revision %}
+        {% if revisado.item == 'km_prox_serv' %}
+        <div class="row mx-auto mb-3">
+          <div class="col-lg-6">
+            Kilometraje para proximo mantenimiento: 
+          </div>
+          <div class="col-lg-2">
+            <input class="form-control" name="km_prox_serv" type="number" value="{{revisado.estado}}">
+          </div>
+        </div>
+        {% else %}
+        <div class="row mx-auto mb-3">
+          <div class="col-lg-6">
+            <p>{{item}}:</p>
+          </div>
+          <div class="col-lg-4">
+            <div class="custom-control custom-radio custom-control-inline inline">
+              <input type="radio" id="{{item}}" name="{{item}}" class="custom-control-input inline" value="Bueno" checked>
+              <label class="custom-control-label" for="{{item}}">Bueno</label>
+            </div>
+            <div class="custom-control custom-radio custom-control-inline inline">
+              <input type="radio" id="{{item}}2" name="{{item}}" class="custom-control-input inline" value="Malo">
+              <label class="custom-control-label" for="{{item}}2">Malo</label>
+            </div>
+            </dirclass="col-lg mt-3">
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        <div class="row mx-auto mb-3">
+          <div class="col-lg-6">
+            Kilometraje para proximo mantenimiento:
+          </div> 
+          <div class="col-lg-2">
+            <input class="form-control" name="km_prox_serv" type="number">
+          </div>
+        </div>
+        {% endif %}
+        {% if items_revisados %}
+        {% for revisado in items_revisados %}
+        {% if revisado.item == 'km_prox_serv' %}
+        <div class="row mx-auto mb-3">
+          <div class="col-lg-6">
+            Kilometraje para proximo mantenimiento: 
+          </div>
+          <div class="col-lg-2">
+            <input class="form-control" name="km_prox_serv" type="number" value="{{revisado.estado}}">
+          </div>
+        </div>
+        {% else %}
+        <div class="row mx-auto mb-3">
+          <div class="col-lg-6">
+            <p>{{revisado.item}}:</p>
+          </div>
+          <div class="col-lg-4">
+            <div class="custom-control custom-radio custom-control-inline inline">
+              <input type="radio" id="{{revisado.item}}" name="{{revisado.item}}" class="custom-control-input inline" value="Bueno" 
+              {% if revisado.estado == 'Bueno' %}
+              checked
+              {% endif %}
+              >
+              <label class="custom-control-label" for="{{revisado.item}}">Bueno</label>
+            </div>
+            <div class="custom-control custom-radio custom-control-inline inline">
+              <input type="radio" id="{{revisado.item}}2" name="{{revisado.item}}" class="custom-control-input inline" value="Malo"
+              {% if revisado.estado == 'Malo' %}
+              checked
+              {% endif %}
+              >
+              <label class="custom-control-label" for="{{revisado.item}}2">Malo</label>
+            </div>
+            </dirclass="col-lg mt-3">
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </form>
+      {% endblock %}

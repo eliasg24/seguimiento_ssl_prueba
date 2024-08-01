@@ -1,0 +1,922 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+{% load static %}
+{% load mathfilters %}
+<style>
+  .card {
+    border-radius: 8px;
+  }
+
+  .highcharts-figure .chart-container {
+    width: 300px;
+    height: 200px;
+    align-self: center;
+  }
+
+  .highcharts-figure,
+  .highcharts-data-table table {
+    width: 600px;
+    margin: 0 auto;
+  }
+
+  .highcharts-data-table table {
+    font-family: Verdana, sans-serif;
+    border-collapse: collapse;
+    margin: 10px auto;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .highcharts-data-table caption {
+    padding: 1em 0;
+    font-size: 1.2em;
+  }
+
+  .highcharts-data-table th {
+    font-weight: 600;
+    padding: 0.5em;
+  }
+
+  .highcharts-data-table td,
+  .highcharts-data-table th,
+  .highcharts-data-table caption {
+    padding: 0.5em;
+  }
+
+  @media (max-width: 600px) {
+
+    .highcharts-figure,
+    .highcharts-data-table table {
+      width: 100%;
+    }
+
+    .highcharts-figure .chart-container {
+      width: 300px;
+      float: none;
+      margin: 0 auto;
+    }
+  }
+
+</style>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+
+<div class="container-fluid mx-auto">
+
+  <div class="text-center">
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+      <label class="btn btn-primary active">
+        <input type="radio" name="options" value="hoy" id="option1" checked> Hoy
+      </label>
+      <label class="btn btn-primary">
+        <input type="radio" name="options" value="mes" id="option2"> Mes
+      </label>
+      <label class="btn btn-primary">
+        <input type="radio" name="options" value="año" id="option3"> Año
+      </label>
+      <label class="btn btn-primary">
+        <input type="radio" name="options" value="rango" id="option4"> Rango
+      </label>
+    </div>
+    <div class="row mt-3 mb-3 mx-auto">
+      <div class="col-md mx-auto form_mes mx-auto text-center hideable">
+        <input class="form-control d-inline-block" type="month" id="input_mes" min="2020-02" style="max-width: 50%;">
+        <button type="button" class="btn btn-primary d-inline-block align-top" onclick="get_info('mes')">
+          <i class="fas fa-search"></i>
+          Buscar
+        </button>
+      </div>
+      <div class="col-md mx-auto form_año mx-auto hideable">
+        <select class="form-control d-inline-block" id="input_año" style="max-width: 50%;">
+          <option value=""></option>
+          {% for año in años %}
+          <option value="{{año.year}}">{{año.year}}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-primary d-inline-block align-top" onclick="get_info('año')">
+          <i class="fas fa-search"></i>
+          Buscar
+        </button>
+      </div>
+      <div class="col-md mx-auto form_rango mx-auto hideable">
+        <input class="form-control d-inline-block" style="max-width: 35%;" type="date" id="input_rango_inicio"
+          min="2020-02">
+        <input class="form-control d-inline-block" style="max-width: 35%;" type="date" id="input_rango_fin"
+          min="2020-02">
+        <button type="button" class="btn btn-primary d-inline-block align-top" onclick="get_info('rango')">
+          <i class="fas fa-search"></i>
+          Buscar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="header_dia hideable">Resumen del Dia</h5>
+  <h5 class="header_mes hideable">Resumen por Mes</h5>
+  <h5 class="header_año hideable">Resumen por Año</h5>
+  <h5 class="header_rango hideable">Resumen por Rango</h5>
+
+  <div class="text-right">
+    {% comment %}
+    <a href="{% url 'resumen_pdf' %}" class="btn btn-success ml-auto text-right">
+      <i class="far fa-file-excel"></i>
+      Descargar Excel
+    </a>
+    {% endcomment %}
+  </div>
+
+  <div class="card-deck mt-3">
+
+    <div class="card">
+      <div class="card-body">
+        <h4 class="text-center">
+          <button type="button" data-toggle="tooltip" data-placement="top" title="Numero de ordenes totales"
+            class="btn shadow" style="background-color: #CFD2D6;">
+            <i class="fas fa-lg	 fa-clipboard-list"></i>
+          </button>
+        </h4>
+        <div class="text-center">
+          <h3 class="card_entradas_totales d-inline-block"></h3>
+          <b>Total de entradas</b>
+        </div>
+
+        <div class="text-center">
+          <div class="spinner-grow text-info mx-auto text-center " role="status"><span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h4 class="text-center">
+          <button type="button" data-toggle="tooltip" data-placement="top"
+            title="Numero de ordenes evaluadas en la etapa de tecnico" class="btn shadow"
+            style="background-color: #ffa154;">
+            <i class="fas fa-lg	 fa-clipboard-list"></i>
+          </button>
+        </h4>
+        <div class="text-center">
+          <h3 class="card_revisiones_no d-inline-block" style="color: #ffa154;"></h3>
+          <b>Revisiones de Tecnico</b>
+        </div>
+
+        <div class="text-center">
+          <div class="spinner-grow text-info mx-auto text-center " role="status"><span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h4 class="text-center">
+          <button type="button" data-toggle="tooltip" data-placement="top" title="Ordenes con cotización de repuestos"
+            class="btn shadow" style="background-color: #de3e80;">
+            <i class="fas fa-lg	 fa-wrench"></i>
+          </button>
+        </h4>
+
+        <div class="text-center">
+          <h3 class="card_cotizaciones d-inline-block" style="color: #de3e80;"></h3>
+          <b>Revisiones de Repuestos</b>
+        </div>
+
+        <div class="text-center">
+          <div class="spinner-grow text-info mx-auto text-center " role="status"><span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="card">
+      <div class="card-body">
+        <h4 class="text-center">
+          <button type="button" data-toggle="tooltip" data-placement="top"
+            title="Ordenes con cotización de mano de obra" class="btn shadow" style="background-color: #f37329;">
+            <i class="fas fa-lg	 fa-address-card"></i>
+          </button>
+        </h4>
+        <div class="text-center">
+          <h3 class="card_cotizaciones_mo d-inline-block" style="color: #f37329;"></h3>
+          <b>Revisiones de Asesor</b>
+        </div>
+        <div class="text-center">
+          <div class="spinner-grow text-info mx-auto text-center " role="status"><span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h4 class="text-center">
+          <button type="button" data-toggle="tooltip" data-placement="top" title="Ordenes que fueron enviadas"
+            class="btn shadow" style="background-color: #ed5353;">
+            <i class="fas fa-lg fa-paper-plane"></i>
+          </button>
+        </h4>
+        <div class="text-center">
+          <h3 class="card_ordenes_enviadas d-inline-block" style="color: #ed5353;"></h3>
+          <b>Ordenes Enviadas</b>
+        </div>
+        <div class="text-center">
+          <div class="spinner-grow text-info mx-auto text-center " role="status"><span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h4 class="text-center">
+          <button type="button" data-toggle="tooltip" data-placement="top"
+            title="El cliente entró al link de cotización" class="btn shadow" style="background-color: #7239b3;">
+            <i class="far fa-eye fa-lg"></i>
+          </button>
+        </h4>
+        <div class="text-center">
+          <h3 class="card_ordenes_vistas d-inline-block" style="color: #7239b3;"></h3>
+          <b>Ordenes Vistas por el Cliente</b>
+        </div>
+        <div class="text-center">
+          <div class="spinner-grow text-info mx-auto text-center " role="status"><span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h4 class="text-center">
+          <button type="button" data-toggle="tooltip" data-placement="top"
+            title="Ordenes cuyo cliente autorizó por lo menos un item" class="btn shadow"
+            style="background-color: #68b723;">
+            <i class="fas fa-lg	 fa-mail-bulk"></i>
+          </button>
+        </h4>
+        <div class="text-center">
+          <h3 class="card_respuestas d-inline-block" style="color: #68b723;"></h3>
+          <b>Respuestas de Cliente</b>
+        </div>
+
+        <div class="text-center">
+          <div class="spinner-grow text-info mx-auto text-center " role="status"><span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4 mb-4">
+    <div class="col-md-7">
+      <h5 class="card-title text-center">Cumplimiento por Fase</h5>
+      <div class="card">
+        <div class="pt-3 pb-3 pl-5 pr-5" id="in_pro"></div>
+      </div>
+    </div>
+
+    <div class="col-md-5 mt-3">
+      <h5 class="text-center">
+        Envios al Cliente
+      </h5>
+      <div class="row">
+        <div class="col-lg">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="mb-3">
+                <button class="btn" style="background-color: #00D372;">
+                  <i class="fab fa-whatsapp fa-lg"></i>
+                </button>
+                Envíos por WhatsApp: <b id="no_wa"></b>
+              </h6>
+              <p class="card-text numero_envios_wa"></p>
+              <h6 class="mb-0">
+                <button class="btn" style="background-color: #3689e6;">
+                  <i class="fas fa-envelope fa-lg	"></i>
+                </button>
+                Envíos por Correo: <b id="no_mail"></b>
+              </h6>
+              <p class="card-text numero_envios_mail"></p>
+            </div>
+          </div>
+        </div>
+        <div class="w-100"></div>
+        <div class="col-lg mt-3">
+          <div class="card">
+            <div id="grafica_envios" class="card-body" style="height: 300px;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="">Promedio de Tiempo por Fase</h5>
+
+  <div class="card-deck">
+
+    <div class="card mt-3">
+      <div class="card-body text-center">
+        <h6 class="text-center">Tiempo Promedio de Revisión Técnica</h6>
+        <figure class="highcharts-figure">
+          <div class="chart-container" id="tiempo_tecnico"></div>
+        </figure>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body text-center">
+        <h6 class="text-center">Tiempo Promedio de Cotización de Repuestos</h6>
+        <figure class="highcharts-figure">
+          <div class="chart-container" id="tiempo_ref"></div>
+        </figure>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body">
+        <h6 class="text-center">Tiempo Promedio de Cotizacion de Asesor</h6>
+        <figure class="highcharts-figure">
+          <div class="chart-container text-center" id="tiempo_asesor"></div>
+        </figure>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row mt-4 mb-4">
+    <div class="col">
+
+    </div>
+
+    <div class="col">
+
+    </div>
+
+    <div class="col">
+
+    </div>
+
+    <div class="col">
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+<script>
+  var grafica_envios = Highcharts.chart('grafica_envios', {
+    chart: {
+
+      plotShadow: false,
+      type: 'pie',
+      backgroundColor: true,
+    },
+    title: {
+      text: 'Envíos',
+    },
+    tooltip: {
+      pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+    },
+    accessibility: {
+      point: {
+        valueSuffix: '%'
+      }
+    },
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: {
+          enabled: true,
+          format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+        }
+      }
+    },
+    series: [{
+      name: 'Porcentaje',
+
+
+      data: [{
+        name: 'Correo',
+        y: 300,
+        color: '#3689e6',
+
+
+        sliced: false
+      }, {
+        name: 'WhatsApp',
+        y: 100,
+        color: '#00d372',
+
+
+      }]
+    }]
+  });
+
+  grafica_envios.reflow();
+</script>
+
+<script>
+  function print_info(response) {
+    console.log(response)
+    $('spinner-grow').fadeOut()
+
+  }
+
+  function get_info(tipo) {
+    $('.spinner-grow').fadeIn()
+    data = {};
+    data.tipo = tipo;
+    if (tipo == 'rango') {
+      data.inicio = document.getElementById('input_rango_inicio').value;
+      data.fin = document.getElementById('input_rango_fin').value;
+    } if (tipo == 'mes') {
+      data.fecha = document.getElementById('input_mes').value;
+    } if (tipo == 'año') {
+      data.fecha = document.getElementById('input_año').value;
+    }
+    console.log(data)
+    $.ajax({
+      type: 'post',
+      data: data,
+      cache: false,
+      headers: { "X-CSRFToken": Cookies.get('csrftoken') },
+      success: function (response) {
+        console.log(response)
+        $('.spinner-grow').fadeOut()
+        document.getElementsByClassName('card_entradas_totales')[0].innerText = (response.total_entradas);
+        document.getElementsByClassName('card_revisiones_no')[0].innerText = (response.finalizados_tecnico);
+        document.getElementsByClassName('card_cotizaciones')[0].innerText = (response.finalizados_refacciones);
+        document.getElementsByClassName('card_cotizaciones_mo')[0].innerText = (response.finalizados_asesor);
+        document.getElementsByClassName('card_ordenes_enviadas')[0].innerText = (response.tarjeta_ordenes_enviadas);
+        document.getElementsByClassName('card_ordenes_vistas')[0].innerText = (response.tarjeta_vistas);
+        document.getElementsByClassName('card_respuestas')[0].innerText = response.finalizados_cliente;
+        document.getElementById('no_wa').innerText = response.no_wa;
+        document.getElementById('no_mail').innerText = response.no_mail;
+        //document.getElementsByClassName('card_cotizaciones_mo')[0].innerText = (response.finalizados_tecnico + ' Respuestas del Cliente');
+        //var new_value = 160;
+        var point1 = $('#tiempo_tecnico').highcharts().series[0].points[0];
+        point1.update(
+          response.tiempo_tecnico
+        );
+
+        var point2 = $('#tiempo_ref').highcharts().series[0].points[0];
+        point2.update(
+          response.tiempo_refacciones
+        );
+
+        var point3 = $('#tiempo_asesor').highcharts().series[0].points[0];
+        point3.update(
+          response.tiempo_asesor
+        );
+
+        var envios_puntos = $('#grafica_envios').highcharts().series[0];
+        envios_puntos.points[0].update(response.no_mail);
+        envios_puntos.points[1].update(response.no_wa);
+
+        var cumplimiento_puntos = $('#in_pro').highcharts();
+        cumplimiento_puntos.series[0].points[0].update(response.total_entradas);
+        cumplimiento_puntos.series[0].points[1].update(response.finalizados_tecnico_calidad);
+        cumplimiento_puntos.series[0].points[2].update(response.finalizados_refacciones);
+        cumplimiento_puntos.series[0].points[3].update(response.finalizados_asesor);
+        cumplimiento_puntos.series[0].points[4].update(response.finalizados_envios)
+        cumplimiento_puntos.series[0].points[5].update(response.finalizados_cliente);
+
+        cumplimiento_puntos.series[1].points[0].update(response.total_entradas);
+        cumplimiento_puntos.series[1].points[1].update(response.total_entradas);
+        cumplimiento_puntos.series[1].points[2].update(response.total_entradas);
+        cumplimiento_puntos.series[1].points[3].update(response.total_entradas);
+        cumplimiento_puntos.series[1].points[4].update(response.total_entradas);
+        cumplimiento_puntos.series[1].points[5].update(response.total_entradas);
+
+        //RI
+        try {
+          var graph = $('.ri-tiempo-promedio').data('graph');
+          graph.data.datasets[0].data.push(response.tiempo_ri);
+          graph.data.datasets[1].data.push(60 - response.tiempo_ri);
+          graph.update();
+        } catch (error) {
+          data = {
+            datasets: [{
+              data: [response.tiempo_ri, 60 - response.tiempo_ri],
+              backgroundColor: [
+                'rgba(54, 137, 230)',
+                'white',
+              ],
+            }],
+
+            // These labels appear in the legend and in the tooltips when hovering different arcs
+            labels: [
+              'Tiempo Promedio (Minutos)',
+              ''
+            ]
+          };
+
+          grafica_tiempo_ri = $(".ri-tiempo-promedio")
+          new Chart(grafica_tiempo_ri, {
+            type: 'doughnut',
+            data: data,
+            options: {
+              legend: {
+                labels: {
+                  fontColor: 'white'//change the color
+                },
+                display: false
+              },
+              rotation: 1 * Math.PI,/** This is where you need to work out where 89% is */
+              circumference: 1 * Math.PI,/** put in a much smaller amount  so it does not take up an entire semi circle */
+            }
+          });
+          grafica_tiempo_ri.height = 250;
+        }
+        $(".ri-tiempo-texto").text(response.tiempo_ri)
+
+        $(".ri_entradas_realizadas").text(response.ri_entradas_realizadas)
+        $(".ri_entradas_totales").text(response.total_entradas)
+        if (parseFloat((100 / response.total_entradas) * response.ri_entradas_realizadas).toFixed(2) == "NaN") {
+          $(".ri_entradas_realizadas_porcentaje").text(0)
+        } else {
+          $(".ri_entradas_realizadas_porcentaje").text(parseFloat((100 / response.total_entradas) * response.ri_entradas_realizadas).toFixed(2))
+        }
+        $(".ri_envios_email").text(response.ri_envios_email)
+        $(".ri_envios_wa").text(response.ri_envios_wa)
+      }
+    });
+  }
+
+  $(function () {
+    $('.hideable').hide()
+    $('.header_dia').fadeIn()
+    get_info('hoy');
+    $("input[type='radio']").click(function () {
+      $('.hideable').hide();
+      var radioValue = $("input[name='options']:checked").val();
+      if (radioValue == 'hoy') {
+        $('.header_dia').fadeIn()
+        get_info('hoy');
+      } else if (radioValue == 'mes') {
+        $('.header_mes').fadeIn()
+        $('.form_mes').fadeIn()
+      } else if (radioValue == 'año') {
+        $('.header_año').fadeIn()
+        $('.form_año').fadeIn()
+      } else if (radioValue == 'rango') {
+        $('.header_rango').fadeIn()
+        $('.form_rango').fadeIn()
+      }
+    });
+  });
+</script>
+
+<script>
+  Highcharts.chart('in_pro', {
+
+    chart: {
+      polar: true,
+      type: 'line'
+    },
+
+    title: {
+      text: '',
+      x: -90,
+      align: 'center',
+    },
+
+    pane: {
+      size: '60%'
+    },
+
+    xAxis: {
+      categories: ['Total de entradas', 'Revisión Técnica', 'Cotización Repuestos', 'Cotización de Asesor',
+        'Enviadas', 'Respondidas'],
+      tickmarkPlacement: 'on',
+      gridLineColor: '#4D4D4D',
+      lineWidth: 0
+    },
+
+    yAxis: {
+      gridLineInterpolation: 'polygon',
+      gridLineColor: '#4D4D4D',
+      lineWidth: 0,
+      min: 0
+    },
+
+    tooltip: {
+      shared: true,
+      pointFormat: '<span style="color:{series.color}">{series.name}: <b>{point.y:,.0f}</b><br/>'
+    },
+
+    legend: {
+      itemStyle: {
+        fontWeight: 'bold'
+      },
+      align: 'center',
+      verticalAlign: 'bottom',
+      layout: 'vertical'
+    },
+
+    series: [{
+      name: 'Selección Actual',
+      data: [35, 25, 15, 10, 5, 3],
+      pointPlacement: 'on',
+      color: '#3689E6'
+    },
+    {
+      name: 'Ideal',
+      data: [35, 35, 35, 35, 35, 35],
+      pointPlacement: 'on',
+      color: '#00FF00'
+    }
+    ],
+
+    responsive: {
+      rules: [{
+        condition: {
+          maxWidth: 350
+        },
+        chartOptions: {
+          legend: {
+            align: 'center',
+            verticalAlign: 'bottom',
+            layout: 'horizontal'
+          },
+          pane: {
+            size: '60%'
+          }
+        }
+      }]
+    }
+
+  });
+</script>
+
+<script>
+  var gaugeOptions = {
+    chart: {
+      type: 'solidgauge'
+    },
+
+    title: "PROMEDIO DE TIEMPOS",
+
+
+    pane: {
+      center: ['50%', '85%'],
+      size: '120%',
+      startAngle: -90,
+      endAngle: 90,
+      background: {
+        backgroundColor:
+          Highcharts.defaultOptions.legend.backgroundColor || '#FFF',
+        innerRadius: '70%',
+        outerRadius: '100%',
+        shape: 'arc'
+      }
+    },
+
+    exporting: {
+      enabled: true
+    },
+
+    tooltip: {
+      enabled: false
+    },
+
+    // the value axis
+    yAxis: {
+      stops: [
+        [0.0, '#00C031'], // green
+        [0.5, '#f7ff00'], // yellow
+        [0.7, '#ff0000'] // red
+      ],
+      lineWidth: 1,
+      tickWidth: 2,
+      minorTickInterval: false,
+      tickAmount: 4,
+      tickPosition: 'inside',
+      title: {
+        y: -80,
+      },
+      labels: {
+        y: 10,
+        distance: 20,
+      }
+    },
+
+    plotOptions: {
+      solidgauge: {
+        dataLabels: {
+          y: 25,
+          borderWidth: 0,
+          useHTML: true
+        }
+      }
+    },
+    responsive: {
+      rules: [{
+        condition: {
+          maxWidth: 1080
+        },
+        chartOptions: {
+          legend: {
+            align: 'center',
+            verticalAlign: 'middle',
+            layout: 'horizontal'
+          }
+        }
+      }]
+    }
+  };
+
+  // The speed gauge
+  var chartSpeed = Highcharts.chart('tiempo_tecnico', Highcharts.merge(gaugeOptions, {
+    yAxis: {
+      min: 0,
+      max: 60,
+      //title: {
+      //    text: 'Promedio de tiempos Técnico'
+      //}
+    },
+
+    credits: {
+      enabled: false
+    },
+
+    series: [{
+      //name: 'Promedio de tiempos',
+      data: [{
+        name: 'Promedio de tiempos Técnico',
+
+        innerRadius: '70%',
+        y: 0
+
+      }],
+      dataLabels: {
+        format:
+          '<div style="text-align:center">' +
+          '<span style="font-size:25px">{y}</span><br/>' +
+          '<span style="font-size:12px">Minutos</span>' +
+          '</div>'
+      },
+      tooltip: {
+        valueSuffix: 'Min'
+      }
+    }]
+
+  }));
+
+
+  var chartSpeed2 = Highcharts.chart('tiempo_ref', Highcharts.merge(gaugeOptions, {
+    yAxis: {
+      min: 0,
+      max: 60,
+      //title: {
+      //    text: 'Promedio de tiempos Técnico'
+      //}
+    },
+
+    credits: {
+      enabled: false
+    },
+
+    series: [{
+      //name: 'Promedio de tiempos',
+      data: [{
+        name: 'Promedio de tiempos Técnico',
+
+        innerRadius: '70%',
+        y: 0
+
+      }],
+      dataLabels: {
+        format:
+          '<div style="text-align:center">' +
+          '<span style="font-size:25px">{y}</span><br/>' +
+          '<span style="font-size:12px">Minutos</span>' +
+          '</div>'
+      },
+      tooltip: {
+        valueSuffix: 'Min'
+      }
+    }]
+
+  }));
+
+
+  var chartSpeed3 = Highcharts.chart('tiempo_asesor', Highcharts.merge(gaugeOptions, {
+    yAxis: {
+      min: 0,
+      max: 60,
+      //title: {
+      //    text: 'Promedio de tiempos Técnico'
+      //}
+    },
+
+    credits: {
+      enabled: false
+    },
+
+    series: [{
+      //name: 'Promedio de tiempos',
+      data: [{
+        name: 'Promedio de tiempos Técnico',
+
+        innerRadius: '70%',
+        y: 0
+
+      }],
+      dataLabels: {
+        format:
+          '<div style="text-align:center">' +
+          '<span style="font-size:25px">{y}</span><br/>' +
+          '<span style="font-size:12px">Minutos</span>' +
+          '</div>'
+      },
+      tooltip: {
+        valueSuffix: 'Min'
+      }
+    }]
+
+  }));
+
+  var chartSpeed4 = Highcharts.chart('tiempo_ri', Highcharts.merge(gaugeOptions, {
+    yAxis: {
+      min: 0,
+      max: 60,
+      //title: {
+      //    text: 'Promedio de tiempos Técnico'
+      //}
+    },
+
+    credits: {
+      enabled: false
+    },
+
+    series: [{
+      //name: 'Promedio de tiempos',
+      data: [{
+        name: 'Promedio de tiempos Técnico',
+
+        innerRadius: '70%',
+        y: 0
+
+      }],
+      dataLabels: {
+        format:
+          '<div style="text-align:center">' +
+          '<span style="font-size:25px">{y}</span><br/>' +
+          '<span style="font-size:12px">Minutos</span>' +
+          '</div>'
+      },
+      tooltip: {
+        valueSuffix: 'Min'
+      }
+    }]
+
+  }));
+
+</script>
+
+<script>
+  var opts = {
+    angle: 0, // The span of the gauge arc
+    lineWidth: 0.25, // The line thickness
+    radiusScale: 1, // Relative radius
+    pointer: {
+      length: 0.60, // // Relative to gauge radius
+      strokeWidth: 0.030, // The thickness
+      color: '#333940' // Fill color
+    },
+    limitMax: false,     // If false, max value increases automatically if value > maxValue
+    limitMin: false,     // If true, the min value of the gauge will be fixed
+    colorStart: '#1C83F6',   // Colors
+    colorStop: '#1C83F6',    // just experiment with them
+    strokeColor: '#EEEEEE',  // to see which ones work best for you
+    percentColors: [[0.33, "#00BE52"], [0.66, "#FFCA00"], [1.0, "#FB0059"]], // !!!!
+    generateGradient: true,
+    highDpiSupport: true,     // High resolution support
+
+  };
+  var target = document.getElementById('tiempo_tecnico'); // your canvas element
+  $(function () {
+    var gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
+    gauge.maxValue = 60; // set max gauge value
+    gauge.setMinValue(0);  // Prefer setter over gauge.minValue = 0
+    gauge.animationSpeed = 30; // set animation speed (32 is default value)
+    gauge.set(60); // set actual value
+  });
+</script>
+{% endblock %}

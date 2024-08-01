@@ -1,0 +1,1341 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+{% load static %}
+{% load mathfilters %}
+
+<script src="{% static 'js/json2.min.js' %}"></script>
+<style>
+</style>
+
+<style>
+  .container {
+    max-width: 1500px;
+  }
+
+</style>
+
+<div class="container mx-auto">
+
+  <div class="card bg-white mb-3 shadow">
+    <h5 class="card-header">
+      Informacion de la Orden
+      <a href="../" type="button" class="btn btn-light border border-dark float-right">
+        <i class="fas fa-chevron-left"></i>
+        Atrás
+      </a>
+    </h5>
+    <div class="row  ml-2 mt-3 mb-3 mr-2">
+      <div class="col-md">
+        <h5 id="noorden">Orden de Servicio: {{orden.no_orden}}</h5>
+        <h6>VIN: {{orden.vin}}</h6>
+        <h6>Placa: {{orden.placas}}</h6>
+        <h6>Cliente: {{orden.cliente}}</h6>
+        <h6>Vehiculo: {{orden.vehiculo}}</h6>
+        <h6>Asesor: {{orden.asesor}}</h6>
+
+        {% for tecnico in tecnicos %}
+        {% if tecnico.id_empleado == orden.tecnico %}
+        <h6>Tecnico: {{tecnico.nombre_empleado|lower|title}}</h6>
+        {% endif %}
+        {% endfor %}
+
+        <h6>Fecha de Elaboración tecnica: {{fin_tecnico}}</h6>
+
+      </div>
+      <div class="col-md-4 mx-auto align-center text-center">
+
+        {% if pdf.nombre_pdf %}
+        <button type="button mx-auto" class="btn btn-info btn-block" data-toggle="modal" data-target="#cotizacion">
+          <i class="fas fa-file-alt"></i>
+          Ver Cotización
+        </button>
+        {% endif %}
+        <button type="button mx-auto" class="btn btn-primary btn-block" data-toggle="modal" data-target="#evidencia">
+          <i class="fas fa-images"></i>
+          Registro fotográfico
+        </button>
+
+        {% comment %}
+        <button type="button mx-auto" class="btn btn-outline-info btn-block" onclick="modal()" data-toggle="modal"
+          data-target="#firma">
+          <i class="fas fa-signature"></i>
+          Firma
+        </button>
+        {% endcomment %}
+
+        <a class="btn btn-primary btn-block" href="/seguimiento/calidad_pdf/{{orden.no_orden}}" target="_blank">
+          <i class="fas fa-file-pdf"></i>
+          PDF Calidad
+        </a>
+
+        {% comment %}
+        <button type="button mx-auto" class="btn btn-outline-info btn-block" onclick="modal()" data-toggle="modal"
+          data-target="#pdf">
+          <i class="fas fa-file-pdf"></i>
+          Generación Personalizada de PDF
+        </button>
+        {% endcomment %}
+
+      </div>
+    </div>
+    {% comment %}
+    <div class="card-body">
+      <h6>Archivo Cotizaciones en Formato PDF:</h6>
+      <div class="btn-group" role="group" aria-label="Basic example">
+        {% if archivo_pdf.completa %}
+        <a role="button" href="/pdf/cotizacion/{{archivo_pdf.completa}}" class="btn btn-outline-info">Completa</a>
+        {% endif %}
+
+        {% if archivo_pdf.ref %}
+        <a role="button" href="/pdf/cotizacion/{{archivo_pdf.ref}}" class="btn btn-outline-info">Repuestos</a>
+        {% endif %}
+
+        {% if archivo_pdf.mo %}
+        <a role="button" href="/pdf/cotizacion/{{archivo_pdf.mo}}" class="btn btn-outline-info">Mano de Obra</a>
+        {% endif %}
+
+        {% if archivo_pdf.mo_ref %}
+        <a role="button" href="/pdf/cotizacion/{{archivo_pdf.mo_ref}}" class="btn btn-outline-info">Personalizada</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endcomment %}
+  </div>
+
+  <div class="card bg-white mb-3 shadow">
+    <h5 class="card-header">
+      Estado General de la Orden
+      <div class="mt-2">
+        <button class="btn btn-success">Terminado</button>
+        <button class="btn btn-primary">Incompleto</button>
+        <button class="btn btn-secondary">No Realizado</button>
+      </div>
+    </h5>
+    <div class="card-body text-center">
+      <div class="btn-toolbar mx-auto text-center" role="toolbar">
+
+        <button type="button" class="btn
+        {% if log.inicio_tecnico and log.fin_tecnico %}
+        btn-success" data-toggle="tooltip" data-placement="top" title="El tecnico guardó la Inspeccion"
+          {% elif log.inicio_tecnico %} btn-primary" data-toggle="tooltip" data-placement="top"
+          title="No se guardó la inspección" {% else %} btn-secondary" data-toggle="tooltip" data-placement="top"
+          title="No se realizó la inspección" {% endif %}>
+          Revisión Técnica</button>
+
+        <button type="button" class="btn
+        {% if log.inicio_refacciones and log.fin_refacciones %}
+        btn-success" data-toggle="tooltip" data-placement="top" title="Se guardó la cotización de repuestos"
+          {% elif log.inicio_refacciones %} btn-primary" data-toggle="tooltip" data-placement="top"
+          title="No se guardó la cotización de repuestos" {% else %} btn-secondary" data-toggle="tooltip"
+          data-placement="top" title="No se realizó la cotización de repuestos" {% endif %}>
+          Captura de Repuestos</button>
+
+        <button type="button" class="btn
+        {% if log.inicio_asesor and log.fin_asesor %}
+        btn-success" data-toggle="tooltip" data-placement="top" title="Se guardó la cotización de mano de obra"
+          {% elif log.inicio_asesor %} btn-primary" data-toggle="tooltip" data-placement="top"
+          title="No se guardó la cotización de mano de obra" {% else %} btn-secondary" data-toggle="tooltip"
+          data-placement="top" title="No se realizó la cotización de mano de obra" {% endif %}>
+          Cotización de Mano de Obra</button>
+
+        <button type="button" class="btn btn-
+        {% if archivo_pdf %}
+        btn-success" data-toggle="tooltip" data-placement="top" title="La cotización en formato pdf fue generada"
+          {% else %} btn-secondary" data-toggle="tooltip" data-placement="top"
+          title="No se generó la cotización en formato pdf" {% endif %}>Generación de PDF de Cotización</button>
+
+        <button type="button" class="btn
+        {% if envios %}
+        btn-success" data-toggle="tooltip" data-placement="top" title="La cotización fue enviada al cliente" {% else %}
+          btn-secondary" data-toggle="tooltip" data-placement="top" title="La cotización no fue enviada al cliente"
+          {% endif %}>Envio al Cliente</button>
+
+        <button type="button" class="btn btn-
+        {% if cliente %}
+        btn-success" data-toggle="tooltip" data-placement="top" title="El cliente autorizó por lo menos un item"
+          {% else %} btn-secondary" data-toggle="tooltip" data-placement="top" title="El cliente no autorizó items"
+          {% endif %}>Respuesta del Cliente</button>
+
+        <button type="button" class="btn btn-
+        {% if calidad %}
+        btn-success" data-toggle="tooltip" data-placement="top" title="La inspección de calidad fue realizada"
+          {% else %} btn-secondary" data-toggle="tooltip" data-placement="top"
+          title="No se realizó la inspección de calidad" {% endif %}>Evaluación de Calidad</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion shadow mb-3" id="accordionExample">
+    <div class="card-header">
+      Archivo de Cotizaciones en Formato PDF
+    </div>
+    {% if pdfs_completos.0 %}
+    <div class="card rounded-0">
+      <div class="card-header" id="headingOne">
+        <h2 class="mb-0">
+          <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse"
+            data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            <i class="fas fa-chevron-down"></i>
+            Completa
+          </button>
+        </h2>
+      </div>
+      <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+
+        <ul class="list-group">
+          <li class="list-group-item">
+            <a class="btn btn-link" href="/pdf/cotizacion/{{pdfs_completos.0}}" role="button">Cotización Completa de
+              Mano de Obra y Repuestos</a>
+          </li>
+        </ul>
+
+      </div>
+    </div>
+    {% endif %}
+
+    {% if pdfs_ref %}
+    <div class="card rounded-0">
+      <div class="card-header" id="headingTwo">
+        <h2 class="mb-0">
+          <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
+            data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+            <i class="fas fa-chevron-down"></i>
+            Repuestos
+          </button>
+        </h2>
+      </div>
+      <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+
+        <ul class="list-group">
+          {% for link in pdfs_ref %}
+          {% if link is not None %}
+          <li class="list-group-item">
+            <a class="btn btn-link" href="/pdf/cotizacion/{{link}}" role="button">Cotización de Repuestos No.
+              {{forloop.counter}}</a>
+          </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+
+      </div>
+    </div>
+    {% endif %}
+
+    {% if pdfs_mo %}
+    <div class="card rounded-0">
+      <div class="card-header" id="headingThree">
+        <h2 class="mb-0">
+          <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
+            data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+            <i class="fas fa-chevron-down"></i>
+            Mano de Obra
+          </button>
+        </h2>
+      </div>
+      <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+
+        <ul class="list-group">
+          {% for link in pdfs_mo %}
+          {% if link is not None %}
+          <li class="list-group-item">
+            <a class="btn btn-link" href="/pdf/cotizacion/{{link}}" role="button">Cotización de Mano de Obra No.
+              {{forloop.counter}}</a>
+          </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+
+      </div>
+    </div>
+    {% endif %}
+
+    {% if pdfs_mo_ref %}
+    <div class="card rounded-0">
+      <div class="card-header" id="headingFour">
+        <h2 class="mb-0">
+          <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
+            data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+            <i class="fas fa-chevron-down"></i>
+            Personalizada
+          </button>
+        </h2>
+      </div>
+      <div id="collapseFour" class="collapse" aria-labelledby="headingFour" data-parent="#accordionExample">
+        <ul class="list-group">
+          {% for link in pdfs_mo_ref %}
+          {% if link is not None %}
+          <li class="list-group-item">
+            <a class="btn btn-link" href="/pdf/cotizacion/{{link}}" role="button">Cotización de Repuestos y Mano de Obra
+              No. {{forloop.counter}}</a>
+          </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if no_pdfs %}
+    <div class="text-center pt-3 pb-3 pl-3 pr-3">No se generaron PDF's</div>
+    {% endif %}
+
+  </div>
+
+  {% if cliente %}
+  <div class="accordion" id="accordion">
+    <div class="card mb-3 mx-auto shadow">
+      <div class="card-header" id="headingOne">
+        <h5>
+          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#body-table"
+            aria-expanded="true" aria-controls="body-table">
+            <i class="fas fa-chevron-down"></i>
+            Respuesta del Cliente
+          </button>
+          <span class="badge badge-pill badge-primary ml-4">{{cantidad_cotizados}} Refacciones Autorizadas</span>
+          <span class="d-inline-block badge badge-pill badge-success ml-4">Monto Autorizado:
+            ${{total_autorizados}}</span>
+          <span class="d-inline-block badge badge-pill badge-danger ml-4">Monto Rechazado:
+            ${{total_no_autorizados}}</span>
+        </h5>
+      </div>
+      <div id="body-table" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+        <table class='table table-sm table-stripped table-hover table-bordered mx-auto table-responsive-md text-left'>
+          <thead class="thead-dark">
+            <tr class="text-left">
+              <th>Ítem</th>
+              <th>Refaccion</th>
+              <th>Autorizacion</th>
+              <th>Hora de Autorizacion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in cliente %}
+            <tr class="text-left">
+              <td>
+                {% ifchanged %}
+                <p>{{fila.item}}</p>
+                {% endifchanged %}
+              </td>
+              <td>
+                <p>{{fila.refaccion}}</p>
+              </td>
+              <td>
+                <p>{{fila.autorizacion}}</p>
+              </td>
+              <td>
+                <p>{{fila.fecha_hora_autorizacion}}</p>
+              </td>
+              {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if filas_completado %}
+  <div class="card mb-3 mx-auto shadow">
+    <h5 class="card-header">
+      <div class="row">
+        <div class="col">
+          Previamente Cotizados
+        </div>
+        <div class="col float-right">
+
+        </div>
+      </div>
+    </h5>
+    <table class='table table-sm table-stripped table-hover table-bordered table-sm mx-auto table-responsive-md'>
+      <thead class="thead-dark">
+        <tr class="text-center">
+          <th>Ítem</th>
+          <th>Refaccion</th>
+          <th>Precio + IVA</th>
+          <th>Existencia</th>
+          <th>Localización</th>
+          <th>Garantia o Seguro</th>
+          <th>RVT</th>
+          <th>UT's</th>
+          <th>MO IVA</th>
+          <th>% Desc. MO</th>
+          <th>% Desc. Repuesto</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in filas_completado %}
+        <tr class="text-center cotizados">
+          <td>
+            {% ifchanged %}
+            {% if fila.estado == 'Inmediato' %}
+            <span class="badge badge-pill badge-danger estado-pill ml-0">Inmediato</span>
+            {% endif %}
+            {% if fila.estado == 'Recomendado' %}
+            <span class="badge badge-pill badge-warning estado-pill ml-0">Recomendado</span>
+            {% endif %}
+            <p>{{fila.item}}</p>
+            {% endifchanged %}
+          </td>
+          <td class="refaccion">
+            {{fila.refaccion}}
+          </td>
+          <td class="precioiva">
+            {{fila.precio_iva}}
+          </td>
+          <td>
+            {{fila.existencia}}
+          </td>
+          <td>
+            {{fila.localizacion}}
+          </td>
+          <td>
+            <input class="form-control garantiaseguro edit" type="text" value="{{fila.garantia_seguro}}"
+              placeholder="{{fila.garantia_seguro}}" readonly>
+          </td>
+          <td>
+            <input class="form-control rvt edit" type="text" value="{{fila.rvt}}" placeholder="{{fila.rvt}}" readonly>
+          </td>
+          <td>
+            <input class="form-control calc uts edit" type="text" value="{{fila.cantidad_ut}}"
+              placeholder="{{fila.cantidad_ut}}" readonly>
+          </td>
+          <td>
+            <input class="form-control moiva edit" type="text" value="{{fila.mo_iva}}" placeholder="{{fila.mo_iva}}"
+              readonly>
+          </td>
+          <td>
+            <input class="form-control calc descmo edit" type="text" value="{{fila.descuento_mo}}"
+              placeholder="{{fila.descuento_mo}}" readonly>
+          </td>
+          <td>
+            <input class="form-control calc descref edit" type="text" value="{{fila.descuento_ref}}"
+              placeholder="{{fila.descuento_ref}}" readonly>
+          </td>
+          <td>
+            <input class="form-control total edit" type="text" value="{{fila.total}}" placeholder="{{fila.total}}"
+              readonly>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if filas %}
+  <div class="card mb-3 mx-auto shadow">
+    <h5 class="card-header">
+      <div class="row">
+        <div class="col">
+          No Cotizados
+          <small class="ml-auto">*El costo de la mano de obra será calculado automaticamente a ${{precio_ut}} por hora.
+          </small>
+        </div>
+        <div class="col-md-3 text-right">
+
+        </div>
+      </div>
+    </h5>
+    <table id="ref" class='table table-sm table-stripped table-hover border table-sm table-responsive-md mx-auto'>
+      <thead class="thead-dark">
+        <tr class="text-center">
+          <th>Ítem</th>
+          <th>Repuesto</th>
+          <th>Precio Refacción</th>
+          <th>Existencia</th>
+          <th>Localización</th>
+          <th>Garantia o Seguro</th>
+          <th>RVT</th>
+          <th>UT's</th>
+          <th>MO</th>
+          <th>% Desc. MO</th>
+          <th>% Desc. Repuesto</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in filas %}
+        <tr class="refaccion text-center">
+          <td style='max-width: 150px;'>
+            {% if fila.estado == 'Inmediato' %}
+            <span class="badge badge-pill badge-danger estado-pill ml-0">Inmediato</span>
+            {% endif %}
+            {% if fila.estado == 'Recomendado' %}
+            <span class="badge badge-pill badge-warning estado-pill ml-0">Recomendado</span>
+            {% endif %}
+
+            <b>{{fila.item}}</b>
+
+          </td>
+          <td style='max-width: 150px;'>
+            <p>{{fila.nombre}}</p>
+          </td>
+          <td class="precio_iva">
+            <p>{{fila.precio}}</p>
+          </td>
+          <td>
+            <p>{{fila.existencia}}</p>
+          </td>
+          <td>
+            <p>{{fila.localizacion}}</p>
+          </td>
+          <td>
+            <select id="tecnico" class="custom-select custom-select-sm align-baseline" style="max-width: 130px;"
+              readonly>
+              <option selected>...</option>
+              <option value="Garantia">Garantia</option>
+              <option value="Seguro">Seguro</option>
+            </select>
+          </td>
+          <td>
+            <select class="custom-select custom-select-sm align-baseline" style="max-width: 130px;" readonly>
+              <option selected>...</option>
+              <option value="Autorizado">Autorizado</option>
+              <option value="No Autorizado">No Autorizado</option>
+            </select>
+          </td>
+          <td class="text-center">
+            <input class="UTS form-control mx-auto" type="number" value="0" style='max-width: 65px;' readonly></input>
+          </td>
+          <td class="mo_iva mx-auto"></td>
+          <td class="text-center">
+            <input class="UTS desc_mo form-control mx-auto" type="number" value="0" style='max-width: 65px;'
+              readonly></input>
+          </td>
+          <td class="text-center">
+            <input class="UTS desc_ref form-control mx-auto" type="number" value="0" style='max-width: 65px;'
+              readonly></input>
+          </td>
+          <td class="total_ref"></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!--<h6 class="ml-auto subtotales">Sub Total Repuestos:  |  Sub Total MO:  | Sub Total Gral:  |  Total Gral:  </h6>-->
+    {% comment %}
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="sub_total_ref">Sub Total Repuestos:</h6>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="sub_total_mo">Sub Total MO:</h6>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="desc_total_ref">Desc Repuestos:</h6>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="desc_total_mo">Desc MO:</h6>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="sub_total_general">Sub Total Gral:</h6>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="iva_total">IVA (12%):</h6>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="total_general">Total Gral:</h6>
+        </div>
+      </div>
+    </div>
+    {% endcomment %}
+
+  </div>
+  {% endif %}
+
+</div>
+
+
+<div class="modal fade" id="evidencia" tabindex="-1" role="dialog" aria-labelledby="evidencia" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="evidencia">Evidencias</h5>
+      </div>
+      <div class="modal-body">
+        {% if filas_media %}
+        <div class="bd-example">
+          <div id="urgente-ev-cap" class="carousel slide" data-ride="carousel">
+            <ol class="carousel-indicators">
+              {% for ev in filas_media %}
+              <li data-target="#urgente-ev-cap" data-slide-to="5" class=""></li>
+              {% endfor %}
+            </ol>
+            <div class="carousel-inner">
+              {% for ev in filas_media %}
+              <div class="carousel-item {% if forloop.counter == 1 %}active{% endif %}"
+                href="{% get_media_prefix %}{{ev.evidencia}}">
+                <img src="{% get_media_prefix %}{{ev.evidencia}}" class="d-block w-100" alt="...">
+                <div class="carousel-caption d-none d-md-block">
+                  <h5>{{ev.item}}</h5>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <a class="carousel-control-prev" href="#urgente-ev-cap" role="button" data-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#urgente-ev-cap" role="button" data-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="sr-only">Next</span>
+            </a>
+          </div>
+        </div>
+        {% endif %}
+        {% if filas_video %}
+        {% for ev in filas_video %}
+        <video class="mx-auto" width="320" height="240" controls>
+          <source src="{% get_media_prefix %}{{ev.evidencia}}">
+          Your browser does not support the video tag.
+        </video>
+        {% endfor %}
+        {% endif %}
+
+        {% if not filas_media and not filas_video %}
+        <h5 class="mx-auto">No hay evidencias disponibles</h5>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="firma" tabindex="-1" role="dialog" aria-labelledby="evidencia" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Firma del Cliente</h5>
+      </div>
+      <div class="modal-body" style="min-height: 400px">
+        <div class="card sigPad mx-auto">
+          <!--<div class="row sigNav">-->
+          <a class="btn btn-secondary clearButton" href="#clear">Reintentar</a>
+          <!--</div>-->
+          <!--<div class="sig sigWrapper mx-auto">-->
+          <div class="row">
+            <canvas class="pad border mt-3 mb-3 mx-auto shadow " width="350" height="175"></canvas>
+          </div>
+          <button type="button" class="btn btn-primary mx-auto mb-3" onclick="firmaToImagen()">Guardar</button>
+          <!--</div>-->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="pdf" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Generación Personalizada de PDF</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="accordion" id="accordionExample">
+          <div class="card">
+            <div class="card-header" id="headingOne">
+              <h2 class="mb-0">
+                <button class="btn btn-link text-decoration-none" type="button" data-toggle="collapse"
+                  data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                  <i class="fas fa-chevron-down"></i>
+                  Cotizacion Completa
+                </button>
+              </h2>
+            </div>
+
+            <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+              <div class="card-body">
+                <P>Esta opción genera un PDF con todas las refacciones y sus respectivos montos de mano de obra.</P>
+                <div class="text-center">
+                  <button type="button" class="btn btn-primary btn-pdf"
+                    onclick="pdf({{no_orden}}, 'com', this.closest('.card-body'))">
+                    <i class="fas fa-download"></i>
+                    Descargar PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingTwo">
+              <h2 class="mb-0">
+                <button class="btn btn-link collapsed text-decoration-none" type="button" data-toggle="collapse"
+                  data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  <i class="fas fa-chevron-down"></i>
+                  Mano de Obra por Selección
+                </button>
+              </h2>
+            </div>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+              <div class="card-body">
+                <p>Esta opción genera un PDF dónde se visualizarán solamente montos de mano de obra de los ítems
+                  seleccionados</p>
+                {% for item in items %}
+                <h5 id="list-{{item}}" class="mt-3">
+                  {{item}}
+                  {% if fila.estado == 'Inmediato' %}
+                  <span class="badge badge-danger">Inmediato</span>
+                  {% endif %}
+                  {% if fila.estado == 'Recomendado' %}
+                  <span class="badge badge-warning">Recomendado</span>
+                  {% endif %}
+                </h5>
+
+                <table class="table table-sm table-sm table-bordered">
+                  <thead class="">
+                    <tr>
+                      <th scope="col">Refaccion</th>
+                      <th scope="col">Mano de Obra</th>
+                      <th scope="col">Añadir</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for fila in filas_completado %}
+                    {% if fila.item == item %}
+                    <tr>
+                      <td style="max-width: 80px;">{{fila.refaccion}}</td>
+                      <td>{{fila.mo_iva}}</td>
+                      <td>
+                        <div class="custom-control custom-switch custom-control-lg">
+                          <input type="checkbox" class="custom-control-input check-check"
+                            id="{{item}}-{{fila.refaccion}}" value="{{fila.refaccion}}">
+                          <label class="custom-control-label" for="{{item}}-{{fila.refaccion}}"></label>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% endfor %}
+                <div class="text-center">
+                  <button type="button" class="btn btn-primary"
+                    onclick="pdf({{no_orden}}, 'mo', this.closest('.card-body'))">
+                    <i class="fas fa-download"></i>
+                    Descargar PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingThree">
+              <h2 class="mb-0">
+                <button class="btn btn-link collapsed text-decoration-none" type="button" data-toggle="collapse"
+                  data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                  <i class="fas fa-chevron-down"></i>
+                  Repuestos por Selección
+                </button>
+              </h2>
+            </div>
+            <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+              <div class="card-body">
+                <p>Esta opción genera un PDF dónde se visualizarán solamente montos de las refacciones de los ítems
+                  seleccionados</p>
+                {% for item in items %}
+                <h5 id="list-{{item}}" class="mt-3">
+                  {{item}}
+                  {% if fila.estado == 'Inmediato' %}
+                  <span class="badge badge-danger">Inmediato</span>
+                  {% endif %}
+                  {% if fila.estado == 'Recomendado' %}
+                  <span class="badge badge-warning">Recomendado</span>
+                  {% endif %}
+                </h5>
+
+                <table class="table table-sm table-bordered">
+                  <thead class="">
+                    <tr>
+                      <th scope="col">Refaccion</th>
+                      <th scope="col">Precio Refaccion</th>
+                      <th scope="col">Añadir</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for fila in filas_completado %}
+                    {% if fila.item == item %}
+                    <tr>
+                      <td style="max-width: 80px;">{{fila.refaccion}}</td>
+                      <td>{{fila.precio_iva}}</td>
+                      <td>
+                        <div class="custom-control custom-switch custom-control-lg">
+                          <input type="checkbox" class="custom-control-input check-check" value="{{fila.refaccion}}"
+                            id="{{item}}-{{fila.refaccion}}-ref">
+                          <label class="custom-control-label" for="{{item}}-{{fila.refaccion}}-ref"></label>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% endfor %}
+                <div class="text-center">
+                  <button type="button" class="btn btn-primary"
+                    onclick="pdf({{no_orden}}, 'ref', this.closest('.card-body'))">
+                    <i class="fas fa-download"></i>
+                    Descargar PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingFour">
+              <h2 class="mb-0">
+                <button class="btn btn-link collapsed text-decoration-none" type="button" data-toggle="collapse"
+                  data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                  <i class="fas fa-chevron-down"></i>
+                  Refacciones y Mano de obra por Selección
+                </button>
+              </h2>
+            </div>
+            <div id="collapseFour" class="collapse" aria-labelledby="headingFour" data-parent="#accordionExample">
+              <div class="card-body">
+                <p>Esta opción genera un PDF dónde se visualizarán los montos de las refacciones y de la mano de obra de
+                  los ítems seleccionados</p>
+                {% for item in items %}
+                <h5 id="list-{{item}}" class="mt-3">
+                  {{item}}
+                  {% if fila.estado == 'Inmediato' %}
+                  <span class="badge badge-danger">Inmediato</span>
+                  {% endif %}
+                  {% if fila.estado == 'Recomendado' %}
+                  <span class="badge badge-warning">Recomendado</span>
+                  {% endif %}
+                </h5>
+
+                <table class="table table-sm table-bordered">
+                  <thead class="">
+                    <tr>
+                      <th scope="col">Refaccion</th>
+                      <th scope="col">Precio Refaccion</th>
+                      <th scope="col">Precio Mano de Obra</th>
+                      <th scope="col">Añadir</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for fila in filas_completado %}
+                    {% if fila.item == item %}
+                    <tr>
+                      <td style="max-width: 80px;">{{fila.refaccion}}</td>
+                      <td>{{fila.precio_iva}}</td>
+                      <td>{{fila.mo_iva}}</td>
+                      <td>
+                        <div class="custom-control custom-switch custom-control-lg">
+                          <input type="checkbox" class="custom-control-input check-check" value="{{fila.refaccion}}"
+                            id="{{item}}-{{fila.refaccion}}-tot">
+                          <label class="custom-control-label" for="{{item}}-{{fila.refaccion}}-tot"></label>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% endfor %}
+                <div class="text-center">
+                  <button type="button" class="btn btn-primary"
+                    onclick="pdf({{no_orden}}, 'mo_ref', this.closest('.card-body'))">
+                    <i class="fas fa-download"></i>
+                    Descargar PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="new_mo_modal" tabindex="-1" role="dialog" aria-labelledby="new_mo_title" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="new_mo_title">Nueva Mano de Obra</h5>
+        <!--<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>-->
+      </div>
+      <div class="modal-body">
+        <div class="row mx-auto">
+          <div class="form-group col-md">
+            <label for="new_mo_refs_input">Elija un item</label>
+            <input id="new_mo_refs_input" list="new_mo_refs" class="form-control" required>
+            <datalist id="new_mo_refs">
+              {% for item in items_mo %}
+              <option value="{{item}}">
+                {% endfor %}
+            </datalist>
+          </div>
+          <div class="form-group col-md">
+            <label for="new_mo">Concepto de Mano de Obra</label>
+            <input type="text" class="form-control" id="new_mo" required>
+          </div>
+        </div>
+        <div id="new_mo_alert" class="alert alert-success fade" role="alert">
+          Mano de Obra Añadida.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" onclick="add_op()">Añadir a la Tabla</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+<script>
+  //onclick="pdf({{no_orden}}, 'Completa', this.closest(.card-body))"
+  function pdf(no_orden, tipo, card_body,) {
+    if (tipo == 'com') {
+      refacciones = null;
+      window.open('/pdf/cotizacion/' + no_orden + '/' + tipo + '/' + refacciones);
+    } else {
+      refacciones = [];
+      switches = card_body.getElementsByClassName('check-check');
+      for (let s = 0; s < switches.length; s++) {
+        if (switches[s].checked == true) {
+          refacciones.push(switches[s].value);
+        };
+      }
+      console.log(refacciones.join('&'));
+      window.open('/pdf/cotizacion/' + no_orden + '/' + tipo + '/' + refacciones);
+    }
+  }
+</script>
+
+<script>
+  $(document).ready(function () {
+    var options = {
+      defaultAction: "drawIt",
+      drawOnly: true,
+
+      displayOnly: false
+    };
+    var api = $('.sigPad').signaturePad(options);
+  });
+
+  function modal() {
+    $('#firma').modal('handleUpdate');
+  }
+
+  function firmaToImagen() {
+    var api = $('.sigPad').signaturePad();
+    var sig = api.getSignatureImage(); ///encode base 64
+    console.log(sig);
+    let data = {};
+    data.firma = sig;
+    $.ajax({
+      type: 'post',
+      data: data,
+      cache: false,
+      headers: { "X-CSRFToken": $.cookie('csrftoken') },
+      success: function () {
+        alert("Firma Enviada Exitosamente");
+      },
+      error: function () {
+        alert("Ha Ocurrido Un Error");
+      },
+    });
+
+  };
+</script>
+
+<script>
+
+  $(".showcomment").each(function (index) {
+    $(this).click(function () {
+      this.closest(".element").getElementsByClassName('comment')[0].style.display = 'block';
+      var form = document.getElementsByClassName('jfu')[0].cloneNode(true);
+      form.style.display = 'block';
+      try {
+        let a = this.closest(".element").getElementsByClassName('jfu')[0].Method
+      } catch {
+        this.closest(".element").getElementsByClassName('file-destiny')[0].appendChild(form);
+      }
+      var uploaders = document.getElementsByClassName('jfu')
+      for (let index = 0; index < uploaders.length; index++) {
+        uploaders[index].id = index;
+      }
+    });
+  });
+
+  function new_ref_modal() {
+    $('#new_mo_modal').modal('toggle')
+  }
+
+  function add_op() {
+    let item = document.getElementById('new_mo_refs_input').value
+    let nombre = document.getElementById('new_mo').value
+    if (nombre) {
+      const cuerpo = `<tr class="refaccion text-center">
+                        <td style='max-width: 150px;'>
+                          <span class="badge badge-pill badge-primary estado-pill ml-0">Adicional</span>
+                          
+                          <b>${item}</b>
+
+                        </td>
+                        <td style='max-width: 150px;'>
+                          <p>${nombre}</p>
+                        </td>
+                        <td class="precio_iva">
+                          <p>0</p>
+                        </td>
+                        <td>
+                          <p>No Aplica</p>
+                        </td>
+                        <td>
+                          <p>No Aplica</p>
+                        </td>
+                        <td>
+                          <select id="tecnico" class="custom-select custom-select-sm align-baseline" style="max-width: 130px;">
+                            <option selected>...</option>
+                            <option value="Garantia">Garantia</option>
+                            <option value="Seguro">Seguro</option>
+                          </select>
+                        </td>
+                        <td>
+                          <select class="custom-select custom-select-sm align-baseline" style="max-width: 130px;">
+                            <option selected>...</option>
+                            <option value="Autorizado">Autorizado</option>
+                            <option value="No Autorizado">No Autorizado</option>
+                          </select>
+                        </td>
+                        <td class="text-center">
+                          <input class="UTS form-control mx-auto" type="number" value="0" style='max-width: 65px;'></input>
+                        </td>
+                        <td class="mo_iva mx-auto">0</td>
+                        <td class="text-center">
+                          <input class="UTS desc_mo form-control mx-auto" type="number" value="0" style='max-width: 65px;'></input>
+                        </td>
+                        <td class="text-center">
+                          <input class="UTS desc_ref form-control mx-auto" type="number" value="0" style='max-width: 65px;'></input>
+                        </td>
+                        <td class="total_ref">0</td>
+                      </tr>
+      `;
+      $('#ref').append(cuerpo); //hace append al codigo de arriba
+      $("#ref .UTS").each(function (index) {
+        $(this).change(function () {
+          let row = this.closest('tr')
+
+          let desc_ref = parseFloat(row.getElementsByClassName('desc_ref')[0].value) / 100;
+          let desc_mo = parseFloat(row.getElementsByClassName('desc_mo')[0].value) / 100;
+
+          let precio = parseFloat(row.getElementsByClassName("precio_iva")[0].innerText);
+          let uts = parseFloat(row.getElementsByTagName("input")[0].value);
+          let mo = parseFloat(uts * {{ precio_ut }});
+        let mo_iva = parseFloat(mo * {{ iva }});
+      let total_ref = (mo - (mo * desc_mo)) + (precio - (precio * desc_ref));
+      row.getElementsByClassName("mo_iva")[0].innerText = mo.toFixed(2);
+      row.getElementsByClassName("total_ref")[0].innerText = total_ref.toFixed(2);
+
+      let SUBMO = 0;
+      let DESCMO = 0;
+      let SUBREF = 0;
+      let DESCREF = 0;
+      let SUBNET = 0;
+      let IVA = 0;
+      let TOTAL = 0;
+      let iva_s = {{ iva }
+    };
+
+    let rows = this.closest('tbody').getElementsByClassName('refaccion');
+    for (let num = 0; num < rows.length; num++) {
+      SUBREF = SUBREF + (parseFloat(rows[num].getElementsByClassName('precio_iva')[0].innerText));
+      DESCREF = DESCREF + ((parseFloat(rows[num].getElementsByClassName('precio_iva')[0].innerText)) * (parseFloat(rows[num].getElementsByClassName('desc_ref')[0].value) / 100));
+      SUBMO = SUBMO + (parseFloat(rows[num].getElementsByClassName('mo_iva')[0].innerText));
+      DESCMO = DESCMO + ((parseFloat(rows[num].getElementsByClassName('mo_iva')[0].innerText)) * (parseFloat(rows[num].getElementsByClassName('desc_mo')[0].value) / 100));
+
+      SUBNET = SUBREF + SUBMO - DESCMO - DESCREF;
+      IVA = SUBNET * (iva_s - 1);
+      TOTAL = SUBNET + IVA;
+    }
+    document.getElementsByClassName('sub_total_ref')[0].innerText = ('Sub Total Repuestos: ' + SUBREF.toFixed(2));
+    document.getElementsByClassName('sub_total_mo')[0].innerText = ('Sub Total MO: ' + SUBMO.toFixed(2));
+    document.getElementsByClassName('desc_total_ref')[0].innerText = ('Desc Repuestos: ' + DESCREF.toFixed(2));
+    document.getElementsByClassName('desc_total_mo')[0].innerText = ('Desc MO: ' + DESCMO.toFixed(2));
+    document.getElementsByClassName('sub_total_general')[0].innerText = ('Sub Total Gral: ' + SUBNET.toFixed(2));
+    document.getElementsByClassName('iva_total')[0].innerText = ('IVA (12%):' + IVA.toFixed(2));
+    document.getElementsByClassName('total_general')[0].innerText = ('Total Gral: ' + TOTAL.toFixed(2));
+  });
+      });
+
+  $("#new_mo_alert").addClass('show');
+  document.getElementById('new_mo_refs_input').value = '';
+  document.getElementById('new_mo').value = '';
+
+  setTimeout(function () {
+    $("#new_mo_alert").removeClass('show');
+  }, 2500);
+
+    }
+
+  };
+
+  function eliminarow() {
+    $('#ref').on('click', 'button[type="button"]', function (e) {
+      $(this).closest('tr').remove();
+      var tds = $('#ref').children('tbody').children('tr').length;
+      console.log(tds - 1);
+      $('#item1').attr('rowspan', tds - 1);
+      //elimina el tr mas cercano y recalcula el rowspan
+    })
+  };
+
+  function guardar() {
+    var refacciones = document.getElementsByClassName('refaccion');
+    var data = {};
+    let iva = {{ iva }
+  };
+  for (let index = 0; index < refacciones.length; index++) {
+    data.item = refacciones[index].getElementsByTagName('td')[0].getElementsByTagName('b')[0].innerText;
+    data.estado = refacciones[index].getElementsByTagName('td')[0].getElementsByClassName('estado-pill')[0].innerText;
+    data.refaccion = refacciones[index].getElementsByTagName('td')[1].innerText;
+    data.precio = refacciones[index].getElementsByTagName('td')[2].innerText;
+    data.precio_iva = (parseFloat(refacciones[index].getElementsByTagName('td')[2].innerText) * iva).toFixed(2);
+    data.existencia = refacciones[index].getElementsByTagName('td')[3].innerText;
+    data.localizacion = refacciones[index].getElementsByTagName('td')[4].innerText;
+    data.garantia = refacciones[index].getElementsByTagName('select')[0].value;
+    data.rvt = refacciones[index].getElementsByTagName('select')[1].value;
+    data.uts = refacciones[index].getElementsByTagName('input')[0].value;
+    data.desc_mo = refacciones[index].getElementsByTagName('input')[1].value;
+    data.desc_ref = refacciones[index].getElementsByTagName('input')[2].value;
+    data.mo_iva = (parseFloat(refacciones[index].getElementsByTagName('td')[8].innerText) * iva).toFixed(2);
+    data.total = (parseFloat(refacciones[index].getElementsByTagName('td')[11].innerText) * iva).toFixed(2);
+    if (index == 0) {
+      data.notif = true;
+    }
+    $.ajax({
+      type: 'post',
+      data: data,
+      cache: false,
+      headers: { "X-CSRFToken": $.cookie('csrftoken') },
+    });
+  }
+  alert("Inspeccion Guardada Exitosamente");
+  location.reload();
+  };
+
+  function edit(td) {
+    td.getElementsByClassName('btn-primary')[0].style.display = 'none';
+    td.getElementsByClassName('btn-success')[0].style.display = 'block';
+    td.getElementsByClassName('btn-secondary')[0].style.display = 'block';
+    let todelete = document.getElementsByClassName('edit-delete');
+    for (let index = 0; index < todelete.length; index++) {
+      todelete[index].style.display = 'block';
+    }
+    let fields = document.getElementsByClassName('edit');
+    for (let index = 0; index < fields.length; index++) {
+      fields[index].readOnly = false;
+    }
+  }
+
+  function cancel(td) {
+    td.getElementsByClassName('btn-primary')[0].style.display = 'block';
+    td.getElementsByClassName('btn-success')[0].style.display = 'none';
+    td.getElementsByClassName('btn-secondary')[0].style.display = 'none';
+    let todelete = document.getElementsByClassName('edit-delete');
+    for (let index = 0; index < todelete.length; index++) {
+      todelete[index].style.display = 'none';
+    }
+
+    let fields = document.getElementsByClassName('edit');
+    for (let index = 0; index < fields.length; index++) {
+      fields[index].readOnly = true;
+    }
+  }
+
+  function save(tr) {
+    let edit_rows = document.getElementsByClassName('cotizados')
+    for (let index = 0; index < edit_rows.length; index++) {
+
+      let data = {}
+      //data.old = edit_rows[index].getElementsByClassName('refaccion')[0].placeholder;
+      data.refaccion = edit_rows[index].getElementsByClassName('refaccion')[0].innerText;
+      //data.precioiva = edit_rows[index].getElementsByClassName('precioiva')[0].innerText;
+      //data.existencia = edit_rows[index].getElementsByClassName('existencia')[0].value;
+      //data.localizacion = edit_rows[index].getElementsByClassName('localizacion')[0].value;
+      data.garantia = edit_rows[index].getElementsByClassName('garantiaseguro')[0].value;
+      data.rvt = edit_rows[index].getElementsByClassName('rvt')[0].value;
+      data.uts = edit_rows[index].getElementsByClassName('uts')[0].value;
+      data.descmo = edit_rows[index].getElementsByClassName('descmo')[0].value;
+      data.descref = edit_rows[index].getElementsByClassName('descref')[0].value;
+      data.moiva = edit_rows[index].getElementsByClassName('moiva')[0].value;
+      data.total = edit_rows[index].getElementsByClassName('total')[0].value;
+      data.metodo = 'update';
+
+      console.log(data)
+      $.ajax({
+        type: 'post',
+        data: data,
+        cache: false,
+        headers: { "X-CSRFToken": $.cookie('csrftoken') },
+      });
+    }
+    alert('Registros Actualizados')
+    location.reload()
+  }
+
+  $(document).ready(function () {
+    let inicio_mo = document.getElementsByClassName('mo_iva')
+    for (let index = 0; index < inicio_mo.length; index++) {
+      inicio_mo[index].innerText = 0;
+    }
+
+    let inicio_ref = document.getElementsByClassName('total_ref')
+    for (let index = 0; index < inicio_ref.length; index++) {
+      inicio_ref[index].innerText = 0;
+    }
+    //iterate through each textboxes and add keyup
+    //handler to trigger sum event
+    $("#ref .UTS").each(function (index) {
+      $(this).change(function () {
+        let row = this.closest('tr')
+
+        let desc_ref = parseFloat(row.getElementsByClassName('desc_ref')[0].value) / 100;
+        let desc_mo = parseFloat(row.getElementsByClassName('desc_mo')[0].value) / 100;
+
+        let precio = parseFloat(row.getElementsByClassName("precio_iva")[0].innerText);
+        let uts = parseFloat(row.getElementsByTagName("input")[0].value);
+        let mo = parseFloat(uts * {{ precio_ut }});
+      let mo_iva = parseFloat(mo * {{ iva }});
+    let total_ref = (mo - (mo * desc_mo)) + (precio - (precio * desc_ref));
+    row.getElementsByClassName("mo_iva")[0].innerText = mo.toFixed(2);
+    row.getElementsByClassName("total_ref")[0].innerText = total_ref.toFixed(2);
+
+    //Sub Totales
+    let SUBMO = 0;
+    let DESCMO = 0;
+    let SUBREF = 0;
+    let DESCREF = 0;
+    let SUBNET = 0;
+    let IVA = 0;
+    let TOTAL = 0;
+    let iva_s = {{ iva }
+  };
+
+  let rows = this.closest('tbody').getElementsByClassName('refaccion');
+  for (let num = 0; num < rows.length; num++) {
+    SUBREF = SUBREF + (parseFloat(rows[num].getElementsByClassName('precio_iva')[0].innerText));
+    DESCREF = DESCREF + ((parseFloat(rows[num].getElementsByClassName('precio_iva')[0].innerText)) * (parseFloat(rows[num].getElementsByClassName('desc_ref')[0].value) / 100));
+    SUBMO = SUBMO + (parseFloat(rows[num].getElementsByClassName('mo_iva')[0].innerText));
+    DESCMO = DESCMO + ((parseFloat(rows[num].getElementsByClassName('mo_iva')[0].innerText)) * (parseFloat(rows[num].getElementsByClassName('desc_mo')[0].value) / 100));
+
+    SUBNET = SUBREF + SUBMO - DESCMO - DESCREF;
+    IVA = SUBNET * (iva_s - 1);
+    TOTAL = SUBNET + IVA;
+  }
+  document.getElementsByClassName('sub_total_ref')[0].innerText = ('Sub Total Repuestos: ' + SUBREF.toFixed(2));
+  document.getElementsByClassName('sub_total_mo')[0].innerText = ('Sub Total MO: ' + SUBMO.toFixed(2));
+  document.getElementsByClassName('desc_total_ref')[0].innerText = ('Desc Repuestos: ' + DESCREF.toFixed(2));
+  document.getElementsByClassName('desc_total_mo')[0].innerText = ('Desc MO: ' + DESCMO.toFixed(2));
+  document.getElementsByClassName('sub_total_general')[0].innerText = ('Sub Total Gral: ' + SUBNET.toFixed(2));
+  document.getElementsByClassName('iva_total')[0].innerText = ('IVA (12%):' + IVA.toFixed(2));
+  document.getElementsByClassName('total_general')[0].innerText = ('Total Gral: ' + TOTAL.toFixed(2));
+        //console.log(sum);
+      });
+    });
+  $(".calc").each(function (index) {
+    $(this).keyup(function () {
+      let row = this.closest('tr')
+
+      let desc_ref = parseFloat(row.getElementsByClassName('descref')[0].value) / 100;
+      let desc_mo = parseFloat(row.getElementsByClassName('descmo')[0].value) / 100;
+
+      let precio_iva = parseFloat(row.getElementsByClassName("precioiva")[0].innerText);
+      let uts = parseFloat(row.getElementsByClassName("uts")[0].value);
+      let mo = parseFloat(uts * {{ precio_ut }});
+    let mo_iva = parseFloat(mo * {{ iva }});
+  let total_ref = (mo_iva - (mo_iva * desc_mo)) + (precio_iva - (precio_iva * desc_ref));
+  row.getElementsByClassName("moiva")[0].value = mo_iva.toFixed(2);
+  row.getElementsByClassName("total")[0].value = total_ref.toFixed(2);
+        //console.log(sum);
+      });
+    });
+  });
+
+
+  function envia() {
+    var agencia = ("Citröen Mavesa");
+    var orden = {{ orden.no_orden }
+  };
+
+  direccion_publica = ("http://cpnetwork.grupomavesa.com.ec:3001/cliente/"); //direccion desde la cual entrarán los clientes
+  telefono = (""); //en lugar de this.dataset.telefono vendrá el telefono cel del cliente registrado eb la oorden, si no hay no hay problema
+  mensaje = (agencia + " le ofrece consultar el progreso de su vehiculo en la siguiente direccion: " + direccion_publica + orden); //sustituir this.dataset.orden por la etiqueta de jinja
+  //parte añadida para envío de seguimiento de ordenes en línea desde tablero estados (order tracking) 
+  var cel = prompt("Por favor introduzca un número de telefono, si el teléfono que aparece es correcto, de click en aceptar, de lo contrario modifíquelo", telefono);
+
+  if (cel == null || cel == "") {
+    location.reload();
+  } else {
+    url = ("https://api.whatsapp.com://send?phone=+593" + cel + "&text=" + mensaje);
+    window.open(url, '_blank');
+  }
+  data = {};
+  data.metodo = 'WhatsApp';
+  data.telefono = cel;
+  $.ajax({
+    type: 'post',
+    data: data,
+    cache: false,
+    headers: { "X-CSRFToken": $.cookie('csrftoken') },
+  });
+  }
+
+  function mail() {
+    correo = ("");
+    var mail = prompt("Por favor introduzca una direccion de correo electronico", correo);
+    if (mail == null || mail == "") {
+      location.reload();
+    } else {
+      var data = {};
+      data.metodo = 'E-Mail'
+      data.mail = mail;
+      $.ajax({
+        type: 'post',
+        data: data,
+        cache: false,
+        headers: { "X-CSRFToken": $.cookie('csrftoken') },
+        success: alert('Correo Enviado'),
+      });
+    }
+  }
+
+
+</script>
+{% endblock %}

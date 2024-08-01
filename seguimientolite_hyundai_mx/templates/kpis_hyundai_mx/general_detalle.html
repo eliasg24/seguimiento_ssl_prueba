@@ -1,0 +1,401 @@
+{% extends 'seguimientolite_hyundai_mx/base.html' %}
+{% block content %}
+{% load static %}
+{% load mathfilters %}
+
+<!--LIGHTGALLERY CSS-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.9.0/dist/css/lightgallery.min.css" />
+<!--LIGHTGALLERY JS-->
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.9.0/dist/js/lightgallery-all.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+
+<style>
+  .tooltip-inner {
+    max-width: 630px;
+    width: 630px;
+  }
+
+  ul {
+    columns: 4;
+    -webkit-columns: 4;
+    -moz-columns: 4;
+  }
+
+</style>
+
+<div class="container my-4 mb-5">
+
+  <div class="card shadow">
+    <div class="card-body">
+      <h5 class="card-title">Información de la orden:</h5>
+      <div class="row">
+        <div class="col-md">
+          <p>Numero de orden: {{orden.no_orden}}</p>
+          <p>Placas: {{orden.no_placas}}</p>
+          <p>Modelo: {{orden.modelo}}</p>
+          <p>VIN: {{orden.vin}}</p>
+          <p>Kilometraje: {{orden.kilometraje}}</p>
+          <p>Cliente: {{orden.cliente}}</p>
+        </div>
+        <div class="col-md-5">
+          <p>Hora de Entrada: {{orden.fecha_hora_entrada}}</p>
+          <p>Hora de Salida: {% if orden.fecha_hora_salida %}{{orden.fecha_hora_salida}}{% endif %}</p>
+          <div class="text-center">
+            <a class="btn btn-primary" href="{% url 'kpis_general_detalle_pdf' orden.no_orden %}" role="button">
+              <i class="far fa-file-excel"></i>
+              Descargar Excel
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="mt-5">
+    {% if orden.multipuntos %}
+    <button class="btn btn-success btn-sm shadow">
+      <i class="fas fa-check fa-lg"></i>
+    </button>
+    {% else %}
+    <button class="btn btn-danger btn-sm shadow">
+      <i class="fas fa-times fa-lg"></i>
+    </button>
+    {% endif %}
+    Inspección Multipuntos
+  </h5>
+
+  <div class="row">
+    <div class="col">
+      <p class="d-inline">Técnico: {% if orden.tecnico %}<strong>{{orden.tecnico}}</strong>{% endif %}</p>
+    </div>
+    <div class="col text-right">
+      <button class="btn btn-primary shadow ml-3 fotos-ssl">
+        <i class="far fa-images fa-lg"></i>
+        Fotos: {{orden.fotos|default_if_none:"0"}}
+      </button>
+
+      <button class="btn btn-primary shadow ml-3 videos-ssl">
+        <i class="fas fa-film fa-lg"></i>
+        Videos: {{orden.videos|default_if_none:"0"}}
+      </button>
+    </div>
+  </div>
+  <div class="card-deck my-4">
+    <div class="card shadow" data-toggle="tooltip" data-placement="top" data-html="true"
+      title="<ul>{% for item in tecnico_buen_estado %}<li class='mx-3 my-3'>{{item.descripcion}}</li>{% endfor %}</ul>">
+      <div class="card-body">
+        <h6 class="card-title">Buen Estado: {{ tecnico_buen_estado.count|default:"0" }}</h6>
+
+      </div>
+    </div>
+    <div class="card shadow" data-toggle="tooltip" data-placement="top" data-html="true"
+      title="<ul>{% for item in tecnico_recomendado %}<li class='mx-3 my-3'>{{item.item}}</li>{% endfor %}</ul>">
+      <div class="card-body">
+        <h6 class="card-title">Sugerido: {% if orden.recomendado %}{{orden.recomendado}}{% else %}0{% endif %}</h6>
+      </div>
+    </div>
+    <div class="card shadow" data-toggle="tooltip" data-placement="top" data-html="true"
+      title="<ul>{% for item in tecnico_inmediato %}<li class='mx-3 my-3'>{{item.item}}</li>{% endfor %}</ul>">
+      <div class="card-body">
+        <h6 class="card-title">Inmediato: {% if orden.inmediato %}{{orden.inmediato}}{% else %}0{% endif %}</h6>
+      </div>
+    </div>
+  </div>
+
+  <h6>Proceso</h6>
+
+  <div class="card-deck my-4">
+    <div class="card shadow">
+      <div class="card-body">
+        <h6 class="card-title d-inline">Cotizacion de Repuestos:
+          {% if orden.cotizacion_refacciones %}Si{% else %}No{% endif %}</h6>
+      </div>
+    </div>
+    <div class="card shadow">
+      <div class="card-body">
+        <h6 class="card-title d-inline">Cotizacion de Mano de Obra:
+          {% if orden.cotizacion_mo %}Si{% else %}No{% endif %}</h6>
+      </div>
+    </div>
+  </div>
+
+  <h6>Cotización</h6>
+  <p class="d-inline">Enviada: {% if orden.envio_cotizacion %}Si{% else %}No{% endif %}</p>
+  <p class="d-inline ml-3">Correo: {% if orden.envio_email %}Si{% else %}No{% endif %}</p>
+  <p class="d-inline ml-3">WhatsApp: {% if orden.envio_whatsapp %}Si{% else %}No{% endif %}</p>
+  <p class="d-inline ml-3">Visto por el cliente: {% if orden.vista_cliente %}Si{% else %}No{% endif %}</p>
+  <div class="card-deck my-4 mb-5">
+    <div class="card shadow text-center">
+      <div class="card-body">
+        <h6 class="card-title">Items autorizados: {% if orden.autorizados %}{{orden.autorizados}}{% else %}0{% endif %}
+          ({% if orden.porcentaje_autorizado %}{{orden.porcentaje_autorizado}}{% else %}0{% endif %}%)</h6>
+        <h5 class="card-title">Monto: {% if orden.monto_autorizado %}{{orden.monto_autorizado}}{% else %}0{% endif %}
+          </h6>
+      </div>
+    </div>
+    <div class="card shadow text-center">
+      <div class="card-body">
+        <h6 class="card-title">Items no autorizados:
+          {% if orden.no_autorizados %}{{orden.autorizados}}{% else %}0{% endif %}
+          ({% if orden.porcentaje_autorizado %}{{orden.porcentaje_no_autorizado}}{% else %}0{% endif %}%)</h6>
+        <h5 class="card-title">Monto:
+          {% if orden.monto_no_autorizado %}{{orden.monto_no_autorizado}}{% else %}0{% endif %}</h6>
+      </div>
+    </div>
+  </div>
+
+  <!--Tarjeta de inspeccion-->
+  <div class="card shadow my-4 mx-auto">
+    <h5 class="card-header">
+      Inspección
+    </h5>
+    {% if refacciones and mano_de_obra %}
+    {% for item in items_tecnico %}
+    <table class="item table table-sm table-stripped table-hover table-responsive-md border shadow-sm mb-5 mx-auto"
+      data-item_id="{{item.id}}">
+
+      <!-- Header de item -->
+      <tr class="bg-light text-dark">
+        <td class="text-left" colspan="4">
+
+          <h6>
+            <!--Estado del item-->
+            {% if item.estado == 'Inmediato' %}
+            <span class="badge badge-pill badge-danger text-light ml-0">Inmediato</span>
+            {% endif %}
+            {% if item.estado == 'Recomendado' %}
+            <span class="badge badge-pill badge-warning text-light ml-0">Recomendado</span>
+            {% endif %}
+            {% if item.estado == 'Corregido' %}
+            <span class="badge badge-pill badge-primary ml-0">Corregido</span>
+            {% endif %}
+            <!--Nombre del item-->
+            <strong>{{item.item.familia.nombre}} - {{item.item.descripcion}}</strong>
+          </h6>
+
+        </td>
+        <td class="text-left" colspan="4">
+          <!--Comentarios del item-->
+          <p>{{item.comentarios}}</p>
+        </td>
+      </tr>
+
+      <tr class="bg-light text-dark">
+        <td class="text-center" colspan="9"><strong>Repuestos</strong></td>
+      </tr>
+
+      <tr class="bg-light text-dark">
+        <td class="text-center"><strong>No. Parte</strong></td>
+        <td class="text-center"><strong>Nombre</strong></td>
+        <td class="text-center"><strong>Cantidad</strong></td>
+        <td class="text-center"><strong>Precio</strong></td>
+        <td class="text-center"><strong>Descuento</strong></td>
+        <td class="text-center"><strong>Subtotal</strong></td>
+        <td class="text-center"><strong>Existencia</strong></td>
+        <td class="text-center"><strong>Ubicación</strong></td>
+      </tr>
+
+      <!--
+        Seccion de refacciones, copiar y pegar el caso cuando
+        hay una inspeccion ya guardada, retirar botones, poner 
+        todos los inputs como disabled
+      -->
+      {% if refacciones %}
+      {% for refaccion in refacciones %}
+      {% if refaccion.item.id == item.id %}
+      <tr class="refaccion text-center" data-refaccion_id="{{refaccion.id}}">
+        <td class="text-center" style="width: 12%;"><input class="refaccion-no-parte form-control" type="text"
+            value="{{refaccion.no_parte}}" disabled
+            onkeyup="this.value = this.value.toUpperCase().replace(/[^a-zA-Z0-9-ñÑ]/g, '');"></input></td>
+        <td class="text-center"><input class="refaccion-nombre form-control" type="text" value="{{refaccion.nombre}}"
+            disabled></input></td>
+        <td class="text-center" style="width: 7%;"><input class="refaccion-cantidad form-control" type="number"
+            value="{{refaccion.cantidad}}" min="0" disabled></input></td>
+        <td class="text-center" style="width: 9%;"><input class="refaccion-precio form-control" type="number"
+            value="{{refaccion.precio_unitario}}" min="0" disabled></input></td>
+        <td class="text-center" style="width: 7%;"><input class="refaccion-descuento form-control" type="number"
+            value="{{refaccion.porcentaje_descuento}}" min="0" disabled></input></td>
+        <td class="text-center" style="width: 9%;"><input class="refaccion-subtotal form-control" type="number"
+            value="{{refaccion.subtotal_iva}}" min="0" disabled></input></td>
+        <td class="text-center">
+          <select class="refaccion-existencia form-control" disabled>
+            <option value="{{refaccion.existencia}}" selected>{{refaccion.existencia}}</option>
+            <option value="Si">Si</option>
+            <option value="No">No</option>
+          </select>
+        </td>
+        <td class="text-center">
+          <select class="refaccion-localizacion form-control" disabled>
+            <option value="{{refaccion.localizacion}}" selected>{{refaccion.localizacion}}</option>
+            <option value="Provincia">Provincia</option>
+            <option value="Importación">Importación</option>
+            <option value="B Central">B Central</option>
+            <option value="Almacén">Almacén</option>
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+
+      <!--Mano de obra-->
+      <tr class="bg-light text-dark">
+        <td class="text-center" colspan="8"><strong>Mano de obra</strong></td>
+      </tr>
+      <tr class="bg-light text-dark">
+        <td class="text-center"><strong>Código MO</strong></td>
+        <td class="text-center" colspan="2"><strong>Nombre</strong></td>
+        <td class="text-center"><strong>UTS</strong></td>
+        <td class="text-center"><strong>Descuento</strong></td>
+        <td class="text-center"><strong>Subtotal</strong></td>
+        <td class="text-center" colspan="2"><strong>Cargo</strong></td>
+      </tr>
+
+      {% if mano_de_obra %}
+      {% for mo in mano_de_obra %}
+      {% if mo.item.id == item.id %}
+      <tr class="mano-de-obra text-center" data-mano_de_obra_id="{{mo.id}}">
+        <td class="text-center">
+          <div class="mb-3">
+            <input class="mano-de-obra-codigo form-control" type="text" value="{{mo.codigo}}" disabled>
+          </div>
+        </td>
+        <td class="text-center" colspan="2"><input class="mano-de-obra-nombre form-control" type="text"
+            value="{{mo.nombre}}" disabled></input></td>
+        <td class="text-center"><input class="mano-de-obra-uts form-control" type="number" min="0"
+            value="{{mo.cantidad_uts}}" disabled></input></td>
+        <td class="text-center"><input class="mano-de-obra-descuento form-control" type="number" min="0"
+            value="{{mo.porcentaje_descuento}}" disabled></input></td>
+        <td class="text-center"><input class="mano-de-obra-subtotal form-control" type="number" min="0"
+            value="{{mo.subtotal_iva}}" disabled></input></td>
+        <td class="text-center" colspan="2">
+          <select class="mano-de-obra-cargo form-control" disabled>
+            <option value="{{mo.cargo.id}}" selected>{{mo.cargo.descripcion}}</option>
+            {% for cargo in cargos %}
+            <option value="{{cargo.id}}">{{cargo.descripcion}}</option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+
+    </table>
+    {% endfor %}
+    {% else %}
+    <div class="card-body text-center">
+      <div>
+        <strong>Inspección incompleta</strong>
+      </div>
+      {% if not refacciones %}
+      <div>No hay cotización de repuestos</div>
+      {% endif %}
+      {% if not mano_de_obra %}
+      <div>No hay cotización de mano de obra</div>
+      {% endif %}
+
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function buscador() {
+    var input, filter, table, tr, td, i, txtValue, td1, txtValue2;
+    input = document.getElementById("buscadorAsesor");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("tablaOrdenes");
+    tr = table.getElementsByTagName("tr");
+    for (i = 0; i < tr.length; i++) {
+      td0 = tr[i].getElementsByTagName("td")[0];
+      td1 = tr[i].getElementsByTagName("td")[1];
+      td2 = tr[i].getElementsByTagName("td")[2];
+      if (td0 || td1 || td2) {
+        txtValue0 = td0.textContent || td0.innerText;
+        txtValue1 = td1.textContent || td1.innerText;
+        txtValue2 = td2.textContent || td2.innerText;
+        if (txtValue0.toUpperCase().indexOf(filter) > -1 || txtValue2.toUpperCase().indexOf(filter) > -1 || txtValue0.toUpperCase().indexOf(filter) > -1) {
+          tr[i].style.display = "";
+        } else {
+          tr[i].style.display = "none";
+        }
+      }
+    }
+  }
+</script>
+
+<!--LIGHT GALLERY-->
+<script>
+  $('.fotos-ssl').on('click', function () {
+    $(this).lightGallery({
+      share: false,
+      dynamic: true,
+      dynamicEl: [
+        {% for ev in evidencias_ssl %}
+          {% if ev.evidencia in videos_ssl %}
+          {% else %}
+    {
+      "src": '/media/{{ ev.evidencia }}',
+      'thumb': '/media/{{ ev.evidencia }}',
+      'subHtml': '<h4>{{ ev.item.item.descripcion }}</h4>'
+    },
+    {% endif %}
+    {% endfor %}
+      ]
+    })
+  });
+
+  $('.videos-ssl').on('click', function () {
+    $(this).lightGallery({
+      share: false,
+      dynamic: true,
+      dynamicEl: [
+        {% for ev in evidencias_ssl %}
+        {% if ev.evidencia in videos_ssl %}
+          {
+      'html': '<video class="lg-video-object lg-html5" controls preload="none"><source src="/media/{{ev.evidencia}}"></video>',
+      'thumb': '/media/{{ ev.evidencia }}',
+      'subHtml': '<h4>{{ ev.item.item.descripcion }}</h4>'
+    },
+    {% endif %}
+    {% endfor %}
+      ]
+    })
+  });
+</script>
+
+<script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+<script>
+  $('#tabla').DataTable({
+    "dom": 'Bfrtip',
+    "responsive": true,
+    "lengthChange": false,
+    "info": false,
+    "paging": false,
+    "language": {
+      "search": "Buscar:",
+    },
+    buttons: [
+      { extend: 'excel', text: '<i class="fas fa-file-excel"></i> Descargar Excel', className: 'btn btn-success' },
+      { extend: 'pdf', text: '<i class="fas fa-file-pdf"></i> Descargar PDF', orientation: 'landscape', className: 'btn btn-secondary' },
+    ]
+  });
+</script>
+{% endblock %}
